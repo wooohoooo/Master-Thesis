@@ -10,12 +10,29 @@ import numpy as np
 import matplotlib.pyplot as plt
 #get_ipython().magic('matplotlib inline')
 from os import system
-from helpers import lazy_property
+
 
 # https://danijar.com/structuring-your-tensorflow-models/
 
 # In[2]:
 
+
+import functools
+
+def lazy_property(function):
+    """
+    Decorator makes sure nodes are only appended if they dont already exist
+    """
+    attribute = '_cache_' + function.__name__
+
+    @property
+    @functools.wraps(function)
+    def decorator(self):
+        if not hasattr(self, attribute):
+            setattr(self, attribute, function(self))
+        return getattr(self, attribute)
+
+    return decorator
 
 
 # In[3]:
