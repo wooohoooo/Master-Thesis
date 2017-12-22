@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 
 
 def generate_sinoid(X):
-    return 5 * np.sin(X) + 10
+    return 5 * np.sin(X) + 10 + X**2
 
 
 def make_y(X, noise=True, generating=generate_sinoid):
