@@ -18,7 +18,7 @@ def plot_dataset(X, y, sorted_index, generating_func=None, legend=True):
 
 def plot_prediction(X, y, sorted_index, variance=None, generating_func=None,
                     legend=True):
-    if len(variance) > 0:
+    if type(variance) == np.ndarray:
         X = np.squeeze(np.array(X))[sorted_index]
         y = np.squeeze(np.array(y))[sorted_index]
         var = np.squeeze(np.array(variance))[sorted_index]
@@ -33,7 +33,7 @@ def plot_prediction(X, y, sorted_index, variance=None, generating_func=None,
         if legend:
             plt.legend()
     else:
-        plot_dataset(X, y, sorted_index)
+        plot_dataset(X, y, sorted_index, generating_func=generating_func)
 
 
 def plot_variance_prediction():

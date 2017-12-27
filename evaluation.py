@@ -21,8 +21,9 @@ def evaluate_model(X, y, y_hat, var=None, plot=False, sorted_index=None,
                    generating_func=None):
     print('RSME is {}'.format(rmse(y_hat, y)))
     if type(var) is np.ndarray:
-        print('COVERAGE PROBABILITY is {}'.format(
-            coverage_probability(y_hat, var, y)))
+        cov_prob = coverage_probability(y_hat, var, y)
+        print('COVERAGE PROBABILITY is {}'.format(cov_prob))
+        print('COVERAGE/MEAN_VAR is {}'.format(cov_prob * 1.0 / np.mean(var)))
     #if plot:
     #    plot_prediction(y, y_hat, sorted_index, lr_var,
     #                    generating_func=generating_func)
