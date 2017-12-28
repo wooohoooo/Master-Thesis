@@ -143,6 +143,21 @@ class EnsembleNetwork(object):
                              feed_dict={self.X: X,
                                         self.y: y})
 
+    def train_and_evaluate(self, X, y):
+        errors = []
+        for epoch in range(self.num_epochs):
+
+            self.session.run(self.train_graph,
+                             feed_dict={self.X: X,
+                                        self.y: y})
+
+            errors.append(
+                self.session.run(self.error_graph,
+                                 feed_dict={self.X: X,
+                                            self.y: y}))
+
+        return errors
+
     def predict(self, X):
         return self.session.run(self.predict_graph, feed_dict={self.X: X})
 
@@ -150,7 +165,7 @@ class EnsembleNetwork(object):
         self.session.close()
 
 
-class GaussianLossEstimator(object):
+class GaussianLossEstimator(EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 10, 10],
@@ -324,7 +339,7 @@ class GaussianLossEstimator(object):
         self.session.close()
 
 
-class GaussianLearningRateEstimator(object):
+class GaussianLearningRateEstimator(EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 10, 10],
@@ -523,7 +538,7 @@ class GaussianLearningRateEstimator(object):
         self.session.close()
 
 
-class DropoutNetwork(object):
+class DropoutNetwork(EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 10, 10],
@@ -673,7 +688,7 @@ class DropoutNetwork(object):
 # # Data
 
 
-class GaussianCovProbInvMeanVarEstimator(object):
+class GaussianCovProbInvMeanVarEstimator(EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 10, 10],
