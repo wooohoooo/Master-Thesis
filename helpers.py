@@ -1,4 +1,5 @@
 import functools
+import numpy as np
 
 
 def lazy_property(function):
@@ -55,3 +56,10 @@ def show_graph(graph_def, max_const_size=32):
         <iframe seamless style="width:1200px;height:620px;border:0" srcdoc="{}"></iframe>
     """.format(code.replace('"', '&quot;'))
     display(HTML(iframe))
+
+
+def unison_shuffled_copies(a, b):
+    assert len(a) == len(b)
+    p = np.random.permutation(len(a))
+    sorted_index = np.argsort(p)
+    return expand_array_dims(a[p]), expand_array_dims(b[p]), sorted_index

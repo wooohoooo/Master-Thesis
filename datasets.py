@@ -23,11 +23,15 @@ def expand_array_dims(array):
     return new_array
 
 
-def unison_shuffled_copies(a, b):
+def unison_shuffled_copies(a, b, expand_dims=False):
     assert len(a) == len(b)
     p = np.random.permutation(len(a))
     sorted_index = np.argsort(p)
-    return expand_array_dims(a[p]), expand_array_dims(b[p]), sorted_index
+    if expand_dims == True:
+        return expand_array_dims(a[p]), expand_array_dims(b[p]), sorted_index
+    else:
+        p = np.squeeze(p)
+        return a[p], b[p], sorted_index
 
 
 def make_dataset(seed=None, x_start=-5, x_end=5, sample_size=100,
@@ -39,7 +43,7 @@ def make_dataset(seed=None, x_start=-5, x_end=5, sample_size=100,
     #np.random.seed(103)
     #if shuffled:
     x_data_shuffled, y_true_shuffled, sorted_index = unison_shuffled_copies(
-        x_data, y_true)
+        x_data, y_true, expand_dims=True)
 
     dataset = {
         'X': x_data_shuffled,
