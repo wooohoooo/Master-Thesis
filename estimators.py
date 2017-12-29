@@ -151,10 +151,10 @@ class EnsembleNetwork(object):
                              feed_dict={self.X: X,
                                         self.y: y})
 
-            errors.append(
-                self.session.run(self.error_graph,
-                                 feed_dict={self.X: X,
-                                            self.y: y}))
+            errors += list(
+                np.sqrt((y - self.session.run(self.predict_graph,
+                                              feed_dict={self.X: X,
+                                                         self.y: y}))**2))
 
         return errors
 
@@ -329,6 +329,41 @@ class GaussianLossEstimator(EnsembleNetwork):
                                  feed_dict={self.X: batch_X,
                                             self.y: batch_y})
 
+    def train_and_evaluate_old(self, X, y):
+        errors = []
+        for epoch in range(self.num_epochs):
+
+            for batch_X, batch_y in zip(X, y):
+                batch_X = np.expand_dims(batch_X, 1)
+                batch_y = np.expand_dims(batch_y, 1)
+                self.session.run(self.train_graph,
+                                 feed_dict={self.X: batch_X,
+                                            self.y: batch_y})
+
+                errors += self.session.run(self.error_graph, feed_dict={
+                    self.X: batch_X,
+                    self.y: batch_y
+                })
+        return errors
+
+    def train_and_evaluate(self, X, y):
+        errors = []
+        for epoch in range(self.num_epochs):
+
+            for batch_X, batch_y in zip(X, y):
+                batch_X = np.expand_dims(batch_X, 1)
+                batch_y = np.expand_dims(batch_y, 1)
+                self.session.run(self.train_graph,
+                                 feed_dict={self.X: batch_X,
+                                            self.y: batch_y})
+
+                y_hat = self.session.run(
+                    self.p_graph, feed_dict={self.X: batch_X,
+                                             self.y: batch_y})
+                error = np.sqrt((y_hat - batch_y)**2)  #RMSE
+                errors.append(error)
+        return errors
+
     def predict(self, X):
         return self.session.run(self.p_graph, feed_dict={self.X: X})
 
@@ -339,7 +374,7 @@ class GaussianLossEstimator(EnsembleNetwork):
         self.session.close()
 
 
-class GaussianLearningRateEstimator(EnsembleNetwork):
+class GaussianLearningRateEstimator(GaussianLossEstimator):
     def __init__(
             self,
             num_neurons=[10, 10, 10],
@@ -520,6 +555,24 @@ class GaussianLearningRateEstimator(EnsembleNetwork):
                                             self.y: batch_y})
             #loss_list.append(np.mean(avg_loss_list))
             #return loss_list
+    def train_and_evaluate_old(self, X, y):
+        errors = []
+        for epoch in range(self.num_epochs):
+
+            for batch_X, batch_y in zip(X, y):
+                batch_X = np.expand_dims(batch_X, 1)
+                batch_y = np.expand_dims(batch_y, 1)
+                self.session.run(self.train_graph,
+                                 feed_dict={self.X: batch_X,
+                                            self.y: batch_y})
+
+                y_hat = self.session.run(self.predict_graph, feed_dict={
+                    self.X: batch_X,
+                    self.y: batch_y
+                })
+                error = np.sqrt((y_hat - batch_y)**2)  #RMSE
+                errors.append(error)
+        return errors
 
     def predict(self, X):
         #if return_loss:

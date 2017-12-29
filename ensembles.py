@@ -130,7 +130,7 @@ class BootstrapEnsemble(EnsembleParent):
                 assert(mask is not old_mask)
                 dataset = np.array(X)[mask]
                 labels = np.array(y)[mask]
-                print(len(dataset))
+                #print(len(dataset))
                 self.dataset_list.append({'X':dataset,'y':labels})
                 old_mask = mask
             
