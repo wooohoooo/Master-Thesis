@@ -36,6 +36,38 @@ def plot_prediction(X, y, sorted_index, variance=None, generating_func=None,
         plot_dataset(X, y, sorted_index, generating_func=generating_func)
 
 
+from evaluation import evaluate_model
+
+
+def train_and_plot(model, X, y, sorted_index, num_eps=10, num_plots=5,
+                   generating_func=None):
+    gauss_lr_error_list = []
+    for i in range(num_eps):
+        errors = model.train_and_evaluate(X, y)
+        gauss_lr_error_list += errors
+        #gauss_lr.train(X,y)
+        #vanilla.train(X,y)
+        if i % (num_eps / num_plots) == 0:
+            gauss_preds = model.predict(X)
+            gauss_var = model.predict_var(X)
+
+            #3lr_preds = gauss_lr.predict(X)
+            #lr_var = gauss_lr.predict_var(X)
+
+            #vanilla_preds = vanilla.predict(X)
+            plot_prediction(X, gauss_preds, sorted_index, gauss_var,
+                            generating_func=generating_func)
+            plt.plot(X, y, 'x')
+            plt.show()
+            evaluate_model(X, y, gauss_preds, var=gauss_var)
+    #plt.plot(np.squeeze(gauss_lr_error_list))
+    return gauss_lr_error_list
+
+
+def plot_error(error_list):
+    plt.plot(np.squeeze(error_list))
+
+
 def plot_variance_prediction():
     plt.plot(x_data, preds_weird_at)
     plt.fill_between(x_data,

@@ -58,7 +58,7 @@ def show_graph(graph_def, max_const_size=32):
     display(HTML(iframe))
 
 
-def unison_shuffled_copies(a, b):
+def unison_shuffled_copies_old(a, b):
     assert len(a) == len(b)
     p = np.random.permutation(len(a))
     sorted_index = np.argsort(p)

@@ -17,7 +17,9 @@ def make_y(X, noise=True, generating=generate_sinoid):
 
 
 def expand_array_dims(array):
-    new_array = [np.expand_dims(np.array(x), 0) for x in array]
+    #new_array = [np.expand_dims(np.array(x), 0) for x in array]
+    new_array = array.astype(np.float32).reshape((len(array), 1))
+
     #new_array = [np.expand_dims(x,1) for x in new_array]
 
     return new_array
