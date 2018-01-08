@@ -80,7 +80,8 @@ class VanillaEnsemble(EnsembleParent):
     def train(self, X, y):
         '''This is where we build in the Online Bootstrap'''
         for estimator in self.estimator_list:
-            estimator.train(X, y)
+            #estimator.train_and_evaluate(X, y,shuffle=False)
+            estimator.train(X,y)
         #system('say training  complete')
 
     def predict(self, X, return_samples=False):
@@ -140,7 +141,7 @@ class BootstrapEnsemble(EnsembleParent):
             
             
         for estimator,dataset in zip(self.estimator_list,self.dataset_list):
-            estimator.train(dataset['X'],dataset['y'])
+            estimator.train(dataset['X'],dataset['y'],shuffle=False)
         #system('say training complete')
             
             
@@ -189,7 +190,7 @@ class GaussianNetworkEnsemble(EnsembleParent):
     def train(self, X, y):
         '''This is where we build in the Online Bootstrap'''
         for estimator in self.estimator_list:
-            estimator.train(X, y)
+            estimator.train(X, y,online=True)
         #system('say training  complete')
 
     def predict(self, X, return_samples=False):

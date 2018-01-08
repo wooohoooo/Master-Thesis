@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 #get_ipython().magic('matplotlib inline')
 from os import system
 from helpers import lazy_property
+from datasets import unison_shuffled_copies
 
 
 class EnsembleNetwork(object):
@@ -33,6 +34,11 @@ class EnsembleNetwork(object):
         self.num_epochs = num_epochs or 1000
         self.seed = seed or None
 
+        self.initialise_graph
+        self.initialise_session
+
+    @lazy_property
+    def initialise_graph(self):
         #initialise graph
         self.g = tf.Graph()
         #build graph with self.graph as default so nodes get appended
@@ -43,6 +49,8 @@ class EnsembleNetwork(object):
             self.train_graph
             self.init = tf.global_variables_initializer()
 
+    @lazy_property
+    def initialise_session(self):
         #initialise session
         self.session = tf.Session(graph=self.g)
         #initialise global variables
@@ -121,7 +129,8 @@ class EnsembleNetwork(object):
         y_hat = self.predict_graph
 
         #error is mean squared error of placehilder y and prediction
-        error = tf.losses.mean_squared_error(self.y, y_hat)
+        error = tf.losses.mean_squared_error(self.y, y_hat)  #tf.square(
+        #self.y - y_hat)  #
 
         return error
 
@@ -136,25 +145,51 @@ class EnsembleNetwork(object):
 
         return optimizer.minimize(error)
 
-    def train(self, X, y):
+    def train_offline(self, X, y):
         for epoch in range(self.num_epochs):
 
             self.session.run(self.train_graph,
                              feed_dict={self.X: X,
                                         self.y: y})
 
-    def train_and_evaluate(self, X, y):
+    def train(self, X, y, shuffle=True, online=False):
+        #print('X is {}'.format(X[:10]))
+        if online:
+            for epoch in range(self.num_epochs):
+                self.train_one_epoch(X, y, shuffle)
+        else:
+            self.train_offline(X, y)
+
+    def train_one_epoch(self, epoch_X, epoch_y, shuffle=True):
+        if shuffle == True:
+            epoch_X, epoch_y, _ = unison_shuffled_copies(
+                np.squeeze(epoch_X), np.squeeze(epoch_y), True)
+        #print(epoch_X[:10])
+
+        for batch_X, batch_y in zip(epoch_X, epoch_y):
+            self.train_one(batch_X, batch_y)
+
+    def train_one(self, batch_X, batch_y):
+        batch_X = np.expand_dims(batch_X, 1)
+        batch_y = np.expand_dims(batch_y, 1)
+        self.session.run(self.train_graph,
+                         feed_dict={self.X: batch_X,
+                                    self.y: batch_y})
+
+    def train_and_evaluate(self, X, y, shuffle=False):
         errors = []
         for epoch in range(self.num_epochs):
 
-            self.session.run(self.train_graph,
-                             feed_dict={self.X: X,
-                                        self.y: y})
+            #self.session.run(self.train_graph,
+            #                 feed_dict={self.X: X,
+            #                            self.y: y})
+            self.train_one_epoch(X, y, shuffle)
 
-            errors += list(
-                np.sqrt((y - self.session.run(self.predict_graph,
-                                              feed_dict={self.X: X,
-                                                         self.y: y}))**2))
+            errors += list(np.sqrt((y - self.predict(X))**2))
+
+            #self.session.run(self.predict_graph,
+            #                          feed_dict={self.X: X,
+            #                                     self.y: y}))**2))
 
         return errors
 
@@ -320,49 +355,52 @@ class GaussianLossEstimator(EnsembleNetwork):
 
         return optimizer.minimize(error)
 
-    def train(self, X, y):
-        for epoch in range(self.num_epochs):
-            for batch_X, batch_y in zip(X, y):
-                batch_X = np.expand_dims(batch_X, 1)
-                batch_y = np.expand_dims(batch_y, 1)
-                self.session.run(self.train_graph,
-                                 feed_dict={self.X: batch_X,
-                                            self.y: batch_y})
+    #def train(self, X, y):
+    #    for epoch in range(self.num_epochs):
+    #        for batch_X, batch_y in zip(X, y):
+    #            batch_X = np.expand_dims(batch_X, 1)
+    #            batch_y = np.expand_dims(batch_y, 1)
+    #            self.session.run(self.train_graph,
+    #                             feed_dict={self.X: batch_X,
+    #                                        self.y: batch_y})
 
-    def train_and_evaluate_old(self, X, y):
-        errors = []
-        for epoch in range(self.num_epochs):
+    #def train_and_evaluate_old(self, X, y):
+    #    errors = []
+    #    for epoch in range(self.num_epochs):#
 
-            for batch_X, batch_y in zip(X, y):
-                batch_X = np.expand_dims(batch_X, 1)
-                batch_y = np.expand_dims(batch_y, 1)
-                self.session.run(self.train_graph,
-                                 feed_dict={self.X: batch_X,
-                                            self.y: batch_y})
+    #          for batch_X, batch_y in zip(X, y):
+    #              batch_X = np.expand_dims(batch_X, 1)
+    #              batch_y = np.expand_dims(batch_y, 1)
+    #              self.session.run(self.train_graph,
+    #                               feed_dict={self.X: batch_X,
+    #                                          self.y: batch_y})
 
-                errors += self.session.run(self.error_graph, feed_dict={
-                    self.X: batch_X,
-                    self.y: batch_y
-                })
-        return errors
+    #             errors += self.session.run(self.error_graph, feed_dict={
+    #                 self.X: batch_X,
+    #                 self.y: batch_y
+    #             })
+    #     return errors
 
-    def train_and_evaluate(self, X, y):
-        errors = []
-        for epoch in range(self.num_epochs):
+    #def train_and_evaluate_old(self, X, y):
+    #    errors = []
+    #    for epoch in range(self.num_epochs):#
 
-            for batch_X, batch_y in zip(X, y):
-                batch_X = np.expand_dims(batch_X, 1)
-                batch_y = np.expand_dims(batch_y, 1)
-                self.session.run(self.train_graph,
-                                 feed_dict={self.X: batch_X,
-                                            self.y: batch_y})
+    #       for batch_X, batch_y in zip(X, y):#
+    #           batch_X = np.expand_dims(batch_X, 1)
+    #           batch_y = np.expand_dims(batch_y, 1)
+    #           self.session.run(self.train_graph,
+    #                            feed_dict={self.X: batch_X,
+    #                                       self.y: batch_y})
 
-                y_hat = self.session.run(
-                    self.p_graph, feed_dict={self.X: batch_X,
-                                             self.y: batch_y})
-                error = np.sqrt((y_hat - batch_y)**2)  #RMSE
-                errors.append(error)
-        return errors
+    #           y_hat = self.session.run(
+    #               self.p_graph, feed_dict={self.X: batch_X,
+    #                                        self.y: batch_y})
+    #           error = np.sqrt((y_hat - batch_y)**2)  #RMSE
+    #           errors.append(error)
+    #   return errors
+
+    def train(self, X, y, online=True):
+        super(GaussianLossEstimator, self).train(X, y, online=online)
 
     def predict(self, X):
         return self.session.run(self.p_graph, feed_dict={self.X: X})
@@ -370,8 +408,8 @@ class GaussianLossEstimator(EnsembleNetwork):
     def predict_var(self, X):
         return self.session.run(self.std_graph, feed_dict={self.X: X})
 
-    def kill(self):
-        self.session.close()
+    #def kill(self):
+    #    self.session.close()
 
 
 class GaussianLearningRateEstimator(GaussianLossEstimator):
@@ -540,55 +578,55 @@ class GaussianLearningRateEstimator(GaussianLossEstimator):
 
         return optimizer.minimize(error)
 
-    def train(self, X, y):
-        #loss_list =[]
-        for epoch in range(self.num_epochs):
-            #avg_loss_list = []
-            for batch_X, batch_y in zip(X, y):
+    #def train(self, X, y):
+    #    #loss_list =[]
+    #    for epoch in range(self.num_epochs):
+    #        #avg_loss_list = []
+    #        for batch_X, batch_y in zip(X, y):#
 
-                batch_X = np.expand_dims(batch_X, 1)
-                #if epoch%10 ==0:
-                #    avg_loss_list.append(self.get_loss(batch_X))
-                batch_y = np.expand_dims(batch_y, 1)
-                self.session.run(self.train_graph,
-                                 feed_dict={self.X: batch_X,
-                                            self.y: batch_y})
-            #loss_list.append(np.mean(avg_loss_list))
-            #return loss_list
-    def train_and_evaluate_old(self, X, y):
-        errors = []
-        for epoch in range(self.num_epochs):
+    #            batch_X = np.expand_dims(batch_X, 1)
+    #if epoch%10 ==0:
+    #    avg_loss_list.append(self.get_loss(batch_X))
+    #            batch_y = np.expand_dims(batch_y, 1)
+    #            self.session.run(self.train_graph,
+    #                             feed_dict={self.X: batch_X,
+    #                                        self.y: batch_y})
+    #loss_list.append(np.mean(avg_loss_list))
+    #return loss_list
+    #def train_and_evaluate_old(self, X, y):
+    #    errors = []
+    #    for epoch in range(self.num_epochs):#
 
-            for batch_X, batch_y in zip(X, y):
-                batch_X = np.expand_dims(batch_X, 1)
-                batch_y = np.expand_dims(batch_y, 1)
-                self.session.run(self.train_graph,
-                                 feed_dict={self.X: batch_X,
-                                            self.y: batch_y})
+    #           for batch_X, batch_y in zip(X, y):
+    #              batch_X = np.expand_dims(batch_X, 1)
+    #             batch_y = np.expand_dims(batch_y, 1)
+    #            self.session.run(self.train_graph,
+    #                            feed_dict={self.X: batch_X,
+    #                                            self.y: batch_y})
 
-                y_hat = self.session.run(self.predict_graph, feed_dict={
-                    self.X: batch_X,
-                    self.y: batch_y
-                })
-                error = np.sqrt((y_hat - batch_y)**2)  #RMSE
-                errors.append(error)
-        return errors
+    #               y_hat = self.session.run(self.predict_graph, feed_dict={
+    #                  self.X: batch_X,
+    #                 self.y: batch_y
+    #            })
+    #            error = np.sqrt((y_hat - batch_y)**2)  #RMSE
+    #           errors.append(error)
+    #  return errors
 
-    def predict(self, X):
-        #if return_loss:
-        #    return {'predictions':self.session.run(self.p_graph,feed_dict={self.X:X}),
-        #    'loss':self.session.run(self.error_graph,feed_dict={self.X:X})}
+    #def predict(self, X):
+    #if return_loss:
+    #    return {'predictions':self.session.run(self.p_graph,feed_dict={self.X:X}),
+    #    'loss':self.session.run(self.error_graph,feed_dict={self.X:X})}
 
-        return self.session.run(self.p_graph, feed_dict={self.X: X})
+    #    return self.session.run(self.p_graph, feed_dict={self.X: X})
 
-    def predict_var(self, X):
-        return self.session.run(self.std_graph, feed_dict={self.X: X})
+    #def predict_var(self, X):
+    #    return self.session.run(self.std_graph, feed_dict={self.X: X})
 
     #def get_loss(self,X):
     #    return self.session.run(self.error_graph,feed_dict={self.X:X})
 
-    def kill(self):
-        self.session.close()
+    #def kill(self):
+    #    self.session.close()
 
 
 class DropoutNetwork(EnsembleNetwork):
