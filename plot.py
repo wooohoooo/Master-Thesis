@@ -48,6 +48,7 @@ def train_and_plot(model, X, y, sorted_index, num_eps=10, num_plots=5,
         #gauss_lr.train(X,y)
         #vanilla.train(X,y)
         if i % (num_eps / num_plots) == 0:
+            #make sure X is new data!
             gauss_preds = model.predict(X)
             gauss_var = model.predict_var(X)
 
