@@ -8,6 +8,15 @@ def generate_sinoid(X):
     return 5 * np.sin(X) + 10 + X**2
 
 
+def generate_sinoid_and_spline(X):
+    #return 5 * np.sin(X) + 10 + X**2
+
+    sinoid = generate_sinoid(X)
+    sinoid = sinoid + (np.sin(X + 1) * 2)**2
+    sinoid[50:] += sinoid[50:] + 10
+    return sinoid
+
+
 def make_y(X, noise=True, generating=generate_sinoid):
     func = generating(X)
     if noise:
@@ -41,7 +50,7 @@ def make_dataset(seed=None, x_start=-5, x_end=5, sample_size=100,
     if seed:
         np.random.seed(seed)
     x_data = np.linspace(x_start, x_end, sample_size)
-    y_true = make_y(x_data, generating=generate_sinoid)
+    y_true = make_y(x_data, generating=generating)
     #np.random.seed(103)
     #if shuffled:
     x_data_shuffled, y_true_shuffled, sorted_index = unison_shuffled_copies(

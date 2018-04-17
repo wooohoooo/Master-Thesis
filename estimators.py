@@ -19,13 +19,15 @@ class EnsembleNetwork(object):
             initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
-            seed=None):
+            seed=None,
+            adversarial=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
         self.num_layers = len(num_neurons)
         self.num_features = num_features
         self.learning_rate = learning_rate
+        self.adversarial = adversarial or False
 
         #optional parameters
         self.optimizer = optimizer or tf.train.GradientDescentOptimizer
@@ -168,6 +170,8 @@ class EnsembleNetwork(object):
 
         for batch_X, batch_y in zip(epoch_X, epoch_y):
             self.train_one(batch_X, batch_y)
+            if self.adversarial:
+                self.train_one(batch_X+0.1, batch_y)
 
     def train_one(self, batch_X, batch_y):
         batch_X = np.expand_dims(batch_X, 1)
@@ -184,6 +188,8 @@ class EnsembleNetwork(object):
             #                 feed_dict={self.X: X,
             #                            self.y: y})
             self.train_one_epoch(X, y, shuffle)
+
+                    
 
             errors += list(np.sqrt((y - self.predict(X))**2))
 
