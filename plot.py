@@ -40,7 +40,7 @@ from evaluation import evaluate_model
 
 
 def train_and_plot(model, X, y, sorted_index, num_eps=10, num_plots=5,
-                   generating_func=None):
+                   generating_func=None, silent=False):
     error_list = []
     for i in range(num_eps):
         errors = model.train_and_evaluate(X, y)
@@ -48,6 +48,7 @@ def train_and_plot(model, X, y, sorted_index, num_eps=10, num_plots=5,
         #gauss_lr.train(X,y)
         #vanilla.train(X,y)
         if i % (num_eps / num_plots) == 0:
+            #make sure X is new data!
             gauss_preds = model.predict(X)
             gauss_var = model.predict_var(X)
 
@@ -55,17 +56,24 @@ def train_and_plot(model, X, y, sorted_index, num_eps=10, num_plots=5,
             #lr_var = gauss_lr.predict_var(X)
 
             #vanilla_preds = vanilla.predict(X)
-            plot_prediction(X, gauss_preds, sorted_index, gauss_var,
-                            generating_func=generating_func)
-            plt.plot(X, y, 'x')
-            plt.show()
-            evaluate_model(X, y, gauss_preds, var=gauss_var)
+            if not silent:
+                plot_prediction(X, gauss_preds, sorted_index, gauss_var,
+                                generating_func=generating_func)
+                plt.plot(X, y, 'x')
+                plt.show()
+                evaluate_model(X, y, gauss_preds, var=gauss_var)
     #plt.plot(np.squeeze(gauss_lr_error_list))
     return error_list
 
 
-def plot_error(error_list):
-    plt.plot(np.squeeze(error_list))
+def plot_error(error_list, variance_list=None):
+    if len(variance_list) > 0:
+        X = np.linspace(0, len(error_list))
+        plt.fill_between(X, error_list, error_list - variance_list, alpha=.3,
+                         color='b')
+
+    else:
+        plt.plot(np.squeeze(error_list))
 
 
 def plot_variance_prediction():
