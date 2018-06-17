@@ -1,1 +1,2 @@
-SEED = 42
+SEED = 84
+ADVERSARIAL = False

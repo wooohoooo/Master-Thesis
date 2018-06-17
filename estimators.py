@@ -7,6 +7,7 @@ from os import system
 from helpers import lazy_property
 from datasets import unison_shuffled_copies
 
+from global_vars import ADVERSARIAL
 
 class EnsembleNetwork(object):
     def __init__(
@@ -27,7 +28,7 @@ class EnsembleNetwork(object):
         self.num_layers = len(num_neurons)
         self.num_features = num_features
         self.learning_rate = learning_rate
-        self.adversarial = adversarial or False
+        self.adversarial = adversarial or ADVERSARIAL
 
         #optional parameters
         self.optimizer = optimizer or tf.train.GradientDescentOptimizer
@@ -171,7 +172,8 @@ class EnsembleNetwork(object):
         for batch_X, batch_y in zip(epoch_X, epoch_y):
             self.train_one(batch_X, batch_y)
             if self.adversarial:
-                self.train_one(batch_X+0.1, batch_y)
+                self.train_one(batch_X+0.05, batch_y)
+                self.train_one(batch_X-0.05, batch_y)
 
     def train_one(self, batch_X, batch_y):
         batch_X = np.expand_dims(batch_X, 1)
@@ -217,13 +219,15 @@ class GaussianLossEstimator(EnsembleNetwork):
             initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
-            seed=None):
+            seed=None,
+            adversarial=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
         self.num_layers = len(num_neurons)
         self.num_features = num_features
         self.learning_rate = learning_rate
+        self.adversarial = adversarial or ADVERSARIAL
 
         #optional parameters
         self.optimizer = optimizer or tf.train.GradientDescentOptimizer
@@ -429,7 +433,8 @@ class GaussianLearningRateEstimator(GaussianLossEstimator):
             initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
-            seed=None):
+            seed=None,
+            adversarial=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -443,6 +448,7 @@ class GaussianLearningRateEstimator(GaussianLossEstimator):
         self.num_epochs = num_epochs or 1000
         self.seed = seed or None
         self.learning_rate_init = learning_rate
+        self.adversarial = adversarial or ADVERSARIAL
 
         #initialise graph
         self.g = tf.Graph()
@@ -647,7 +653,8 @@ class DropoutNetwork(EnsembleNetwork):
             initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
-            seed=None):
+            seed=None,
+            adversarial=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -662,6 +669,7 @@ class DropoutNetwork(EnsembleNetwork):
         self.initialisation_scheme = initialisation_scheme or tf.random_normal
         self.num_epochs = num_epochs or 1000
         self.seed = seed or None
+        self.adversarial = adversarial or ADVERSARIAL
 
         #initialise graph
         self.g = tf.Graph()

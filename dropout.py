@@ -6,12 +6,12 @@ import matplotlib.pyplot as plt
 from os import system
 from helpers import lazy_property
 from datasets import unison_shuffled_copies
+from estimators import EnsembleNetwork
+
+from global_vars import ADVERSARIAL
 
 
-
-
-
-class EnsembleNetwork(object):
+class EnsembleNetwork2(object):
     def __init__(
             self,
             num_neurons=[10, 10, 10],
@@ -22,7 +22,8 @@ class EnsembleNetwork(object):
             initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
-            seed=None):
+            seed=None,
+            adversarial=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -37,6 +38,7 @@ class EnsembleNetwork(object):
         self.initialisation_scheme = initialisation_scheme or tf.random_normal
         self.num_epochs = num_epochs or 1000
         self.seed = seed or None
+        self.adversarial = adversarial or ADVERSARIAL
 
         self.initialise_graph
         self.initialise_session
@@ -219,7 +221,8 @@ class DropoutNetwork(EnsembleNetwork):
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
             seed=None,
-            num_samples=None):
+            num_samples=None,
+            adversarial = None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -237,6 +240,7 @@ class DropoutNetwork(EnsembleNetwork):
         self.num_epochs = num_epochs or 1000
         self.seed = seed or None
         self.num_samples = num_samples or 10
+        self.adversarial = adversarial or ADVERSARIAL
 
         #initialise graph
         self.g = tf.Graph()
