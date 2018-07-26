@@ -421,7 +421,7 @@ class GaussianLossNetwork(EnsembleNetwork):
 	def fit(self, X, y, online=True):
 
 		X = self.check_input_dimensions(X)
-		y = self.check_input_dimensions(y)
+		#y = self.check_input_dimensions(y)
 		super(GaussianLossNetwork, self).train(X, y, online=online)
 
 	def predict(self, X):
@@ -664,7 +664,7 @@ class DropoutNetwork(EnsembleNetwork):
 			num_neurons=[10, 10, 10],
 			num_features=1,
 			keep_prob=0.8,
-			learning_rate=0.001,
+			learning_rate=0.01,
 			activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
 			dropout_layers=None,#[2],#]None,  #[1,3,5]#[True,False,True]
 			initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
@@ -812,6 +812,8 @@ class DropoutNetwork(EnsembleNetwork):
 
 
 	def predict_one(self, X): #predict_one
+		#X = self.check_input_dimensions(X)
+
 		return self.session.run(self.predict_graph, feed_dict={self.X: X})
 
 	def generate_samples(self,X):
