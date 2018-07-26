@@ -1,6 +1,6 @@
 import functools
 import numpy as np
-
+import tensorflow as tf
 
 def lazy_property(function):
     """

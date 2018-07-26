@@ -1,5 +1,6 @@
 import functools
 import numpy as np
+import tensorflow as tf
 
 
 def lazy_property(function):
@@ -57,6 +58,13 @@ def show_graph(graph_def, max_const_size=32):
     """.format(code.replace('"', '&quot;'))
     display(HTML(iframe))
 
+def expand_array_dims(array):
+    #new_array = [np.expand_dims(np.array(x), 0) for x in array]
+    new_array = array.astype(np.float32).reshape((len(array), 1))
+
+    #new_array = [np.expand_dims(x,1) for x in new_array]
+
+    return new_array
 
 
 

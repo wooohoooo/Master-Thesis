@@ -21,12 +21,24 @@ class BasePredictor(object):
 	def __init__(self, estimator_stats=None, num_epochs=10):
 		pass
 
-	def train(self, X, y):
-		pass
+	#def train(self, X, y):
+	#	pass
 
 	def predict(self, X, return_samples=False):
 		pass
 	
+	def get_prediction_and_std(self,X_test):
+		try: 
+			pred_dict = self.predict(X_test,True)
+			y_hat = pred_dict['means']
+			std = pred_dict['stds']
+		except:
+			
+			y_hat = self.predict(X_test)
+			#print(pred_dict)
+			std = self.predict_var(X_test)
+	
+		return y_hat,std
 	def check_input_dimensions(self,array):
 		"""Makes sure arrays are compatible with Tensorflow input
 		can't have array.shape = (X,),
@@ -36,12 +48,53 @@ class BasePredictor(object):
 		else:
 			return array
 		
+	def network_mutli_dimensional_scatterplot(self,X_test,y_test,X=None,y=None,figsize=(20,50),filename=None):
+        
+		#y_hat = self.predict(X_test)
+		#print(pred_dict)
+		#std = self.predict_var(X_test)
+		y_hat,std = self.get_prediction_and_std(X_test)
+		
+		#plt.rcParams["figure.figsize"] = (20,20)
+		plt.figure(figsize=figsize)
+		#plt.scatter(X[:,5],y)
+
+		num_features = len(X_test.T)
+		for i,feature in enumerate(X_test.T):
+			#sort the arrays
+			s = np.argsort(feature)
+			var = y_hat[s]-std[s]
+			var2 = y_hat[s] +std[s]
+			print(feature.shape)
+			print(var.shape)
+
+
+
+			plt.subplot(num_features,1,i+1)
+			plt.plot(feature[s],y_hat[s],label = 'predictive Mean',)
+			plt.fill_between(feature[s].ravel(),y_hat[s].ravel(),var.ravel(),alpha=.3, color='b',label='uncertainty')
+			plt.fill_between(feature[s].ravel(),y_hat[s].ravel(),var2.ravel(),alpha=.3, color='b')
+			plt.scatter(feature[s],y_test[s],label='data',s=20, edgecolor="black",
+				c="darkorange")
+			plt.xlabel("data")
+			plt.ylabel("target")
+			plt.title("Ensemble")
+			plt.legend()  
+			if filename is not None:
+				plt.savefig(filename)
+
+		if filename is not None:
+				plt.savefig(filename)
+		plt.show()
+		
 		
 	def ensemble_mutli_dimensional_scatterplot(self,X_test,y_test,X=None,y=None,figsize=(20,50),filename=None):
         
-		pred_dict = self.predict(X_test,True)
-		y_hat = pred_dict['means']
-		std = pred_dict['stds']
+		#pred_dict = self.predict(X_test,True)
+		#y_hat = pred_dict['means']
+		#std = pred_dict['stds']
+		y_hat,std = self.get_prediction_and_std(X_test)
+
 		
 		#plt.rcParams["figure.figsize"] = (20,20)
 		plt.figure(figsize=figsize)
@@ -78,7 +131,7 @@ class BasePredictor(object):
 		
 	def plot(self, X, y, plot_samples=False, original_func=None,
 			 sorted_index=None):
-		preds_dict = self.predict(X, True)
+		preds_dict = self.predict(X)
 		y_hats = np.array([mean[0] for mean in preds_dict['means']])
 		y_stds = np.array([std[0] for std in preds_dict['stds']])
 		samples = preds_dict['samples']
@@ -113,10 +166,9 @@ class BasePredictor(object):
 	
 	#evaluation
 	def nlpd(self,X,y):
-		pred_dict = self.predict(X,True)
-		y_hat = pred_dict['means']
-		std = pred_dict['stds']
-		
+
+		y_hat,std = self.get_prediction_and_std(X)
+
 		return -1/2 *np.mean( safe_ln(std) + ((y_hat - y)**2/(std+0.0001)))
 	
 	def normalised_nlpd(self,X,y):
@@ -126,9 +178,7 @@ class BasePredictor(object):
     
 	def coverage_probability(self,X, y):
 
-		pred_dict = self.predict(X,True)
-		y_hat = pred_dict['means']
-		std = pred_dict['stds']		#print(y_hat.shape,std.shape,y.shape)
+		y_hat,std = self.get_prediction_and_std(X)
 
 		CP = 0
 		for pred, s, target in zip(y_hat, std, y):
@@ -140,14 +190,10 @@ class BasePredictor(object):
 		return CP / len(y)
     
 	def error_uncertainty_correlation(self,X,y):
-		pred_dict = self.predict(X,True)
-		y_hat = pred_dict['means']
-		std = pred_dict['stds']		#print(y_hat.shape,std.shape,y.shape)
+		y_hat,std = self.get_prediction_and_std(X)
 
 		error = np.square(y_hat.flatten() - y.flatten())
-		print(error.shape)
-		print(y_hat.shape)
-		print(std.shape)
+
 		correlation = scipy.stats.pearsonr(error.flatten(),std.flatten())
 		
 
@@ -156,9 +202,7 @@ class BasePredictor(object):
 
 
 	def y_predicts_uncertainty(self,X,y):
-		pred_dict = self.predict(X,True)
-		y_hat = pred_dict['means']
-		std = pred_dict['stds']		#print(y_hat.shape,std.shape,y.shape)
+		y_hat,std = self.get_prediction_and_std(X)
 
 		correlation = scipy.stats.pearsonr(y_hat.flatten(),y.flatten())
 		return correlation
@@ -171,9 +215,7 @@ class BasePredictor(object):
 		pass
 
 	def compute_rsme(self,X,y):
-		pred_dict = self.predict(X,True)
-		y_hat = pred_dict['means']
-		std = pred_dict['stds']		#print(y_hat.shape,std.shape,y.shape)
+		y_hat,std = self.get_prediction_and_std(X)
 
 		return np.sqrt(np.mean((y_hat - y)**2))
 
@@ -194,3 +236,4 @@ class BasePredictor(object):
 				'NLPD':nlpd,
 			   }
 
+#TODO: SelfEvaluate Network!
