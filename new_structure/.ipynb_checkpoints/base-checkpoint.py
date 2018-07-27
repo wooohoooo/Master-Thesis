@@ -56,7 +56,7 @@ class BasePredictor(object):
 		y_hat,std = self.get_prediction_and_std(X_test)
 		
 		#plt.rcParams["figure.figsize"] = (20,20)
-		plt.figure(figsize=figsize)
+		fig = plt.figure(figsize=figsize)
 		#plt.scatter(X[:,5],y)
 
 		num_features = len(X_test.T)
@@ -85,7 +85,8 @@ class BasePredictor(object):
 
 		if filename is not None:
 				plt.savefig(filename)
-		plt.show()
+		#plt.show()
+		return fig
 		
 		
 	def ensemble_mutli_dimensional_scatterplot(self,X_test,y_test,X=None,y=None,figsize=(20,50),filename=None):
@@ -97,7 +98,7 @@ class BasePredictor(object):
 
 		
 		#plt.rcParams["figure.figsize"] = (20,20)
-		plt.figure(figsize=figsize)
+		fig = plt.figure(figsize=figsize)
 		#plt.scatter(X[:,5],y)
 
 		num_features = len(X_test.T)
@@ -126,7 +127,8 @@ class BasePredictor(object):
 
 		if filename is not None:
 				plt.savefig(filename)
-		plt.show()
+		#plt.show()
+		return fig
 
 		
 	def plot(self, X, y, plot_samples=False, original_func=None,
