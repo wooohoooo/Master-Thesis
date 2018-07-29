@@ -43,10 +43,13 @@ class BasePredictor(object):
 		"""Makes sure arrays are compatible with Tensorflow input
 		can't have array.shape = (X,),
 		needs to be array.shape = (X,1)"""
-		if len(array.shape) == 1:
-			return np.expand_dims(array, 1)
-		else:
-			return array
+		y = array
+		y = np.reshape(y, [y.shape[0], 1])
+		return y
+		#if len(array.shape) == 1:
+	#		return np.expand_dims(array, 1)
+#		else:
+			#return array
 		
 	def network_mutli_dimensional_scatterplot(self,X_test,y_test,X=None,y=None,figsize=(20,50),filename=None):
         
