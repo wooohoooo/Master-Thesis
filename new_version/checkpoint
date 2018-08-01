@@ -1,0 +1,2 @@
+model_checkpoint_path: "thisisatest"
+all_model_checkpoint_paths: "thisisatest"

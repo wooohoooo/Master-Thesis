@@ -6,6 +6,61 @@ import numpy as np
 
 
 
+
+
+class CopyNetwork(EnsembleNetwork):
+	def __init__(self,
+			num_neurons=[10, 10],
+			num_features=1,
+			learning_rate=0.001,
+			activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
+			dropout_layers=None,  #[True,False,True]
+			initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
+			optimizer=None,  #defaults to GradiendDescentOptimizer,
+			num_epochs=None,  #defaults to 1,
+			seed=None,
+			adversarial=None):
+
+			super(CopyNetwork, self).__init__(num_neurons,num_features,learning_rate,activations,
+												 dropout_layers,initialisation_scheme,optimizer,num_epochs,seed,adversarial)
+
+
+			self.save_names = []
+
+			
+			
+	@lazy_property
+	def initialise_graph(self):
+		#initialise graph
+		self.g = tf.Graph()
+		#build graph with self.graph as default so nodes get appended
+		with self.g.as_default():
+			self.init_network
+			self.predict_graph
+			self.error_graph
+			self.train_graph
+			self.init = tf.global_variables_initializer()
+			self.saver = tf.train.Saver()
+
+	def save(self,name='testname'):
+		#with self.session as sess:
+
+			#self.session.run(self.saver.save(self.session, name))
+			self.saver.save(self.session, name)
+			
+			self.save_names.append(name)
+
+	def load(self,name='testname'):
+		
+		
+		self.saver.restore(self.session, name)
+
+		#new_saver = tf.train.import_meta_graph(name)
+		#new_saver.restore(self.session, tf.train.latest_checkpoint('./'))
+
+
+
+
 class DropoutNetwork(EnsembleNetwork):
     def __init__(
             self,
