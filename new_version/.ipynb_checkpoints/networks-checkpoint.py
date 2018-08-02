@@ -40,7 +40,7 @@ class CopyNetwork(EnsembleNetwork):
 			self.error_graph
 			self.train_graph
 			self.init = tf.global_variables_initializer()
-			self.saver = tf.train.Saver()
+			self.saver = tf.train.Saver(max_to_keep=None)#make sure none of the models are discarded without explicitly wanting to
 
 	def save(self,name='testname'):
 		#with self.session as sess:
