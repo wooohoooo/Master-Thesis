@@ -2,3 +2,15 @@
 *.pyc
 
 *.pyc
+
+new_version/checkpoint
+
+*.data-00000-of-00001
+
+*.meta
+
+*.index
+
+*.meta
+
+new_version/checkpoint
