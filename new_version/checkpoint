@@ -1,2 +1,5 @@
-model_checkpoint_path: "thisisatest"
-all_model_checkpoint_paths: "thisisatest"
+model_checkpoint_path: "copynetwork_checkpoint_3"
+all_model_checkpoint_paths: "copynetworkcheckpoint_0"
+all_model_checkpoint_paths: "copynetwork_checkpoint_1"
+all_model_checkpoint_paths: "copynetwork_checkpoint_2"
+all_model_checkpoint_paths: "copynetwork_checkpoint_3"
