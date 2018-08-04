@@ -2,6 +2,7 @@ import functools
 import numpy as np
 import tensorflow as tf
 
+
 def lazy_property(function):
     """
     Decorator makes sure nodes are only appended if they dont already exist

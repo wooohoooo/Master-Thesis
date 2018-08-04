@@ -19,6 +19,10 @@ https://medium.com/ai%C2%B3-theory-practice-business/understanding-hintons-capsu
 
 https://arxiv.org/pdf/1710.11573.pdf
 
+Bayesian Ensemble Learning
+http://papers.nips.cc/paper/3084-bayesian-ensemble-learning.pdf
+
+
 https://www.quantamagazine.org/new-theory-cracks-open-the-black-box-of-deep-learning-20170921/
 
 https://arxiv.org/pdf/1611.03530.pdf

@@ -29,7 +29,8 @@ def visualise(net,datasetcreator,num_meta_epochs=num_meta_epochs,plot=True):
 	plt.plot(X_test[test_idx],y_pred[test_idx],c='orange',label='initial prediction')
 	plt.scatter(X_test,y_test)
 	plt.legend()
-
+	plt.xlabel('x')
+	plt.ylabel('y')
 
 
 	pred_list = [y_pred]
@@ -102,6 +103,10 @@ def visualise_uncertainty(net,datasetcreator,num_meta_epochs=num_meta_epochs,plo
 		plt.fill_between(X_test[test_idx].ravel(), pred_mean[test_idx].ravel(),
 						 pred_mean[test_idx].ravel()-pred_std[test_idx].ravel(), alpha=.3, color='b')
 		plt.scatter(X_test,y_test)
+		plt.title('original prediction')
+		plt.xlabel('x')
+		plt.ylabel('y')
+
 	for i in range(num_meta_epochs-1):
 
 		#after training
@@ -117,6 +122,7 @@ def visualise_uncertainty(net,datasetcreator,num_meta_epochs=num_meta_epochs,plo
 			plt.fill_between(X_test[test_idx].ravel(), pred_mean[test_idx].ravel(),
 							 pred_mean[test_idx].ravel()-pred_std[test_idx].ravel(), alpha=.3, color='b')
 			plt.scatter(X_test,y_test)
+			plt.title('prediction after {} meta-epochs with {} epochs'.format(i, net.num_epochs))
 
 	fig.add_subplot(num_meta_epochs+1,1,num_meta_epochs+1)
 	plt.plot(X_test[test_idx],pred_mean[test_idx],c='orange')
@@ -127,11 +133,13 @@ def visualise_uncertainty(net,datasetcreator,num_meta_epochs=num_meta_epochs,plo
 	plt.scatter(X_test,y_test)
 	#fig2 = plt.figure(figsize=(20,5))
 
-	#for i,pred in enumerate(pred_list):
-	#    error_list.append(np.mean((pred-y_test)**2))
-	#    plt.scatter(X_test,y_test)
-	#    plt.plot(X_test[test_idx],pred[test_idx],label='prediction after {} epochs'.format(i))
-	#    plt.legend()
-	#fig3 = plt.figure(figsize=(20,5))
-	#plt.plot(error_list)
+	for i,pred in enumerate(pred_list):
+		error_list.append(np.mean((pred-y_test)**2))
+		plt.scatter(X_test,y_test)
+		plt.plot(X_test[test_idx],pred[test_idx],label='prediction after {} epochs'.format(i))
+		plt.legend()
+		plt.title('Development of predictions through time')
+	fig3 = plt.figure(figsize=(20,5))
+	plt.plot(error_list)
+	plt.title('error through time')
 	return 'this run of {} epochs and {} metaepochs took {}s'.format(net.num_epochs, num_meta_epochs,time.time() - start_time)

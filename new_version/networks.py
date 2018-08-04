@@ -4,61 +4,56 @@ import tensorflow as tf
 import numpy as np
 
 
-
-
-
-
 class CopyNetwork(EnsembleNetwork):
-	def __init__(self,
-			num_neurons=[10, 10],
-			num_features=1,
-			learning_rate=0.001,
-			activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
-			dropout_layers=None,  #[True,False,True]
-			initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
-			optimizer=None,  #defaults to GradiendDescentOptimizer,
-			num_epochs=None,  #defaults to 1,
-			seed=None,
-			adversarial=None):
+    def __init__(
+            self,
+            num_neurons=[10, 10],
+            num_features=1,
+            learning_rate=0.001,
+            activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
+            dropout_layers=None,  #[True,False,True]
+            initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
+            optimizer=None,  #defaults to GradiendDescentOptimizer,
+            num_epochs=None,  #defaults to 1,
+            seed=None,
+            adversarial=None):
 
-			super(CopyNetwork, self).__init__(num_neurons,num_features,learning_rate,activations,
-												 dropout_layers,initialisation_scheme,optimizer,num_epochs,seed,adversarial)
+        super(CopyNetwork, self).__init__(
+            num_neurons, num_features, learning_rate, activations,
+            dropout_layers, initialisation_scheme, optimizer, num_epochs, seed,
+            adversarial)
 
+        self.save_names = []
 
-			self.save_names = []
+    @lazy_property
+    def initialise_graph(self):
+        #initialise graph
+        self.g = tf.Graph()
+        #build graph with self.graph as default so nodes get appended
+        with self.g.as_default():
+            self.init_network
+            self.predict_graph
+            self.error_graph
+            self.train_graph
+            self.init = tf.global_variables_initializer()
+            self.saver = tf.train.Saver(
+                max_to_keep=None
+            )  #make sure none of the models are discarded without explicitly wanting to
 
-			
-			
-	@lazy_property
-	def initialise_graph(self):
-		#initialise graph
-		self.g = tf.Graph()
-		#build graph with self.graph as default so nodes get appended
-		with self.g.as_default():
-			self.init_network
-			self.predict_graph
-			self.error_graph
-			self.train_graph
-			self.init = tf.global_variables_initializer()
-			self.saver = tf.train.Saver(max_to_keep=None)#make sure none of the models are discarded without explicitly wanting to
+    def save(self, name='testname'):
+        #with self.session as sess:
 
-	def save(self,name='testname'):
-		#with self.session as sess:
+        #self.session.run(self.saver.save(self.session, name))
+        self.saver.save(self.session, name)
 
-			#self.session.run(self.saver.save(self.session, name))
-			self.saver.save(self.session, name)
-			
-			self.save_names.append(name)
+        self.save_names.append(name)
 
-	def load(self,name='testname'):
-		
-		
-		self.saver.restore(self.session, name)
+    def load(self, name='testname'):
 
-		#new_saver = tf.train.import_meta_graph(name)
-		#new_saver.restore(self.session, tf.train.latest_checkpoint('./'))
+        self.saver.restore(self.session, name)
 
-
+        #new_saver = tf.train.import_meta_graph(name)
+        #new_saver.restore(self.session, tf.train.latest_checkpoint('./'))
 
 
 class DropoutNetwork(EnsembleNetwork):
@@ -75,8 +70,10 @@ class DropoutNetwork(EnsembleNetwork):
             seed=None,
             adversarial=None):
 
-            super(DropoutNetwork, self).__init__(num_neurons,num_features,learning_rate,activations,
-                                                 dropout_layers,initialisation_scheme,optimizer,num_epochs,seed,adversarial)
+        super(DropoutNetwork, self).__init__(
+            num_neurons, num_features, learning_rate, activations,
+            dropout_layers, initialisation_scheme, optimizer, num_epochs, seed,
+            adversarial)
 
     @lazy_property
     def predict_graph(self):
@@ -88,9 +85,9 @@ class DropoutNetwork(EnsembleNetwork):
 
             #z = input x Weights
             a = tf.matmul(layer_input, w, name='matmul_' + str(i))
-            
-            if i == self.num_layers: #This is new - Dropout!
-                a = tf.nn.dropout(a, 0.90) #0.9 = keep_prob
+
+            if i == self.num_layers:  #This is new - Dropout!
+                a = tf.nn.dropout(a, 0.90)  #0.9 = keep_prob
 
             #z + bias
             if i < self.num_layers:
@@ -102,34 +99,42 @@ class DropoutNetwork(EnsembleNetwork):
 
                 a = self.activations[i](a)
             #set layer input to a for next cycle
-    
+
             layer_input = a
 
         return a
 
     def predict(self, X):
         X = self.check_input_dimensions(X)
-        
-        pred_list = [self.session.run(self.predict_graph, feed_dict={self.X: X}).squeeze() for i in range(15)]
-        
-        pred_mean = np.mean(pred_list,axis=0)
+
+        pred_list = [
+            self.session.run(self.predict_graph,
+                             feed_dict={self.X: X}).squeeze()
+            for i in range(15)
+        ]
+
+        pred_mean = np.mean(pred_list, axis=0)
         #pred_std = np.std(pred_list,axis=0)
-        return pred_mean#, pred_std
-    
+        return pred_mean  #, pred_std
+
     def get_mean_and_std(self, X):
         X = self.check_input_dimensions(X)
-        
-        pred_list = [self.session.run(self.predict_graph, feed_dict={self.X: X}).squeeze() for i in range(15)]
-        
-        pred_mean = np.mean(pred_list,axis=0)
-        pred_std = np.std(pred_list,axis=0)
+
+        pred_list = [
+            self.session.run(self.predict_graph,
+                             feed_dict={self.X: X}).squeeze()
+            for i in range(15)
+        ]
+
+        pred_mean = np.mean(pred_list, axis=0)
+        pred_std = np.std(pred_list, axis=0)
         return pred_mean, pred_std
 
-	
+
 class NlpdNetwork(EnsembleNetwork):
     def __init__(
             self,
-            num_neurons=[10,5,5,5, 5],
+            num_neurons=[10, 5, 5, 5, 5],
             num_features=1,
             learning_rate=0.001,
             activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
@@ -148,9 +153,10 @@ class NlpdNetwork(EnsembleNetwork):
         self.adversarial = adversarial or False
 
         #optional parameters
-        self.optimizer = optimizer or tf.train.AdamOptimizer#tf.train.GradientDescentOptimizer
-        self.activations = activations or [tf.nn.relu] * self.num_layers #tanh,relu, 
-        self.initialisation_scheme = initialisation_scheme or tf.random_uniform#tf.truncated_normal#
+        self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
+        self.activations = activations or [tf.nn.relu
+                                           ] * self.num_layers  #tanh,relu, 
+        self.initialisation_scheme = initialisation_scheme or tf.random_uniform  #tf.truncated_normal#
         self.num_epochs = num_epochs or 10
         self.seed = seed or None
 
@@ -170,9 +176,10 @@ class NlpdNetwork(EnsembleNetwork):
         self.session = tf.Session(graph=self.g)
         #initialise global variables
         self.session.run(self.init)
+
     @lazy_property
     def init_network(self):
-        self.min_std = tf.Variable(0.05) #THIS IS NEW
+        self.min_std = tf.Variable(0.05)  #THIS IS NEW
 
         if self.seed:
             tf.set_random_seed(self.seed)
@@ -203,7 +210,7 @@ class NlpdNetwork(EnsembleNetwork):
             self.b_list.append(
                 tf.Variable(tf.ones(shape=[n_inputs]), name='b_' + str(i)))
         #THis is new: Build two separate outputs for mean and std
-        self.p_w = tf.Variable( 
+        self.p_w = tf.Variable(
             self.initialisation_scheme([self.num_neurons[-1], 1]),
             name='w_-1')  #this is a regression
         self.std_w = tf.Variable(
@@ -249,53 +256,52 @@ class NlpdNetwork(EnsembleNetwork):
     @lazy_property
     def std_graph(self):
         l_in = self.predict_graph
-        return tf.nn.softplus(tf.matmul(l_in, self.std_w)) 
+        return tf.nn.softplus(tf.matmul(l_in, self.std_w))
+
     @lazy_property
     def error_graph(self):
 
         #y_hat is a // output of prediction graph
         y_hat = self.p_graph
-        std_hat = tf.maximum(self.std_graph, self.min_std)  #tf.square(self.std_graph)
+        std_hat = tf.maximum(self.std_graph,
+                             self.min_std)  #tf.square(self.std_graph)
 
         #first_term = tf.log(tf.div(std_hat, 2.0))
         first_term = tf.log(std_hat)
-        second_term = tf.div(
-            tf.square(tf.subtract(self.y, y_hat)),  std_hat)
+        second_term = tf.div(tf.square(tf.subtract(self.y, y_hat)), std_hat)
         error = tf.add(tf.add(first_term, second_term), 1.0)
 
         return error
 
-
     def predict(self, X):
         X = self.check_input_dimensions(X)
 
-        return self.session.run(self.p_graph, feed_dict={self.X: X})# now calls p_graph instead of predict_graph
+        return self.session.run(self.p_graph, feed_dict={
+            self.X: X
+        })  # now calls p_graph instead of predict_graph
 
     def predict_var(self, X):
         X = self.check_input_dimensions(X)
 
         return self.session.run(self.std_graph, feed_dict={self.X: X})
 
-                                
     def get_mean_and_std(self, X):
-        return self.predict(X),self.predict_var(X)
-	
-	
-	
-	
+        return self.predict(X).flatten(), self.predict_var(X).flatten()
+
+
 class LrNetwork(NlpdNetwork):
     def __init__(
-        self,
-        num_neurons=[10, 10, 10],
-        num_features=1,
-        learning_rate=0.001,
-        activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
-        dropout_layers=None,  #[True,False,True]
-        initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
-        optimizer=None,  #defaults to GradiendDescentOptimizer,
-        num_epochs=None,  #defaults to 1,
-        seed=None,
-        adversarial=None):
+            self,
+            num_neurons=[10, 10, 10],
+            num_features=1,
+            learning_rate=0.001,
+            activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
+            dropout_layers=None,  #[True,False,True]
+            initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
+            optimizer=None,  #defaults to GradiendDescentOptimizer,
+            num_epochs=None,  #defaults to 1,
+            seed=None,
+            adversarial=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -306,9 +312,10 @@ class LrNetwork(NlpdNetwork):
         #self.optimizer = optimizer or tf.train.GradientDescentOptimizer
         #self.activations = activations or [tf.nn.tanh] * self.num_layers
         #self.initialisation_scheme = initialisation_scheme or tf.random_normal
-        self.optimizer = optimizer or tf.train.AdamOptimizer#tf.train.GradientDescentOptimizer
-        self.activations = activations or [tf.nn.relu] * self.num_layers #tanh,relu, 
-        self.initialisation_scheme = initialisation_scheme or tf.truncated_normal#.random_uniform#tf.truncated_normal#
+        self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
+        self.activations = activations or [tf.nn.relu
+                                           ] * self.num_layers  #tanh,relu, 
+        self.initialisation_scheme = initialisation_scheme or tf.truncated_normal  #.random_uniform#tf.truncated_normal#
         self.num_epochs = num_epochs or 10
         self.seed = seed or None
         self.learning_rate_init = learning_rate
@@ -332,6 +339,7 @@ class LrNetwork(NlpdNetwork):
         self.session = tf.Session(graph=self.g)
         #initialise global variables
         self.session.run(self.init)
+
     @lazy_property
     def init_lr(self):
         self.learning_rate = tf.Variable(self.learning_rate_init)
