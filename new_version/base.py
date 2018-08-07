@@ -211,13 +211,17 @@ class EnsembleNetwork(object):
         #print('X is {}'.format(X[:10]))
 
         #if shuffle:
-        X, y, _ = self.shuffle_data(X, y)
-        X = self.check_input_dimensions(X)
-        y = self.check_input_dimensions(y)
+
         if online:
             for epoch in range(self.num_epochs):
+                X, y, _ = self.shuffle_data(X, y)
+                X = self.check_input_dimensions(X)
+                y = self.check_input_dimensions(y)
                 self.train_one_epoch(X, y, shuffle)
         else:
+            X, y, _ = self.shuffle_data(X, y)
+            X = self.check_input_dimensions(X)
+            y = self.check_input_dimensions(y)
             self.train_offline(X, y)
 
     def train_one_epoch(self, epoch_X, epoch_y, shuffle=True):

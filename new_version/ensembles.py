@@ -3,28 +3,34 @@ import numpy as np
 from networks import CopyNetwork
 from base import EnsembleNetwork
 import scipy
+import tensorflow as tf
 
 
 class BootstrapEnsemble(object):
     def __init__(self, ensemble=None, num_features=None, num_epochs=10,
-                 num_ensembles=5, seed=42, num_neurons=[10, 5, 3]):
+                 num_ensembles=5, seed=42, num_neurons=[10, 5, 3],
+                 initialisation_scheme=None):
         self.num_features = num_features or 1
         self.seed = seed
         self.num_neurons = num_neurons
 
         self.ensemble_list = ensemble or [EnsembleNetwork] * num_ensembles
         self.num_epochs = num_epochs
+        self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer
         self.initialise_ensemble()
 
     def initialise_ensemble(self):
         self.ensemble = [
             member(num_features=self.num_features, seed=i + self.seed,
-                   num_epochs=self.num_epochs, num_neurons=self.num_neurons)
+                   num_epochs=self.num_epochs, num_neurons=self.num_neurons,
+                   initialisation_scheme=self.initialisation_scheme)
             for i, member in enumerate(self.ensemble_list)
         ]
 
     def fit(self, X, y):
         '''This is where we build in the Online Bootstrap'''
+        #for i in range(self.num_epochs):
+
         for estimator in self.ensemble:
             estimator.fit(X, y)
 
@@ -97,14 +103,16 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
     #TODO: Early stopping if error does not decrease
 
     def __init__(self, num_features=None, num_epochs=10, num_models=3,
-                 model_name='copynetwork', seed=42, num_neurons=[10, 5, 3]):
+                 model_name='copynetwork', seed=42, num_neurons=[10, 5, 3],
+                 initialisation_scheme=None):
         self.model_name = 'checkpoints/' + model_name
         self.model = CopyNetwork(seed=seed)
         self.train_iteration = 0
 
         super(BootstrapThroughTimeBobStrap, self).__init__(
             ensemble=None, num_features=num_features, num_epochs=num_epochs,
-            num_ensembles=1, seed=seed, num_neurons=num_neurons)
+            num_ensembles=1, seed=seed, num_neurons=num_neurons,
+            initialisation_scheme=initialisation_scheme)
         self.num_epochs = num_epochs
         self.num_models = num_models
 
@@ -143,12 +151,13 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
     # TODO: try out 'burn in' Phase.
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
                  model_name='diversitycopynetwork', seed=42,
-                 num_neurons=[10, 5, 3]):
+                 num_neurons=[10, 5, 3], initialisation_scheme=None):
 
         super(ForcedDiversityBootstrapThroughTime, self).__init__(
             num_features=None, num_epochs=num_epochs, num_models=num_models,
             model_name='forceddiversitycopynetwork', seed=seed,
-            num_neurons=num_neurons)
+            num_neurons=num_neurons,
+            initialisation_scheme=initialisation_scheme)
 
     def fit(self, X, y, X_test=None, y_test=None):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
@@ -173,12 +182,13 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
 class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
                  model_name='diversitycopynetwork', seed=42,
-                 num_neurons=[10, 5, 3]):
+                 num_neurons=[10, 5, 3], initialisation_scheme=None):
 
         super(ForcedDiversityBootstrapThroughTime2, self).__init__(
             num_features=None, num_epochs=num_epochs, num_models=num_models,
             model_name='forceddiversitycopynetwork', seed=seed,
-            num_neurons=num_neurons)
+            num_neurons=num_neurons,
+            initialisation_scheme=initialisation_scheme)
 
     def fit(self, X, y, X_test=None, y_test=None):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
@@ -214,12 +224,13 @@ class ForcedDiversityBootstrapThroughTime3(BootstrapThroughTimeBobStrap):
 
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
                  model_name='diversitycopynetwork', seed=42,
-                 num_neurons=[10, 5, 3]):
+                 num_neurons=[10, 5, 3], initialisation_scheme=None):
 
         super(ForcedDiversityBootstrapThroughTime3, self).__init__(
             num_features=None, num_epochs=num_epochs, num_models=num_models,
             model_name='forceddiversitycopynetwork', seed=seed,
-            num_neurons=num_neurons)
+            num_neurons=num_neurons,
+            initialisation_scheme=initialisation_scheme)
 
     def predict(self, X):
         self.model.load(self.checkpoints[-1])

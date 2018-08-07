@@ -176,15 +176,15 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
                          model_list[0]['prediction'][test_idx].ravel() +
                          model_list[0]['uncertainty'][test_idx].ravel(),
                          alpha=.3, color='b')
-        plt.title('best model')
-        plt.xlabel('experiment')
-        plt.ylabel('nlpd')
+        plt.title('best model nlpd')
+        plt.xlabel('x')
+        plt.ylabel('y')
         plt.legend()
 
         plt.figure()
         plt.scatter(X_test, y_test)
         plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
-                 label='best model')
+                 label='worst')
         plt.fill_between(X_test[test_idx].ravel(),
                          model_list[-1]['prediction'][test_idx].ravel(),
                          model_list[-1]['prediction'][test_idx].ravel() -
@@ -195,9 +195,48 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
                          model_list[-1]['prediction'][test_idx].ravel() +
                          model_list[-1]['uncertainty'][test_idx].ravel(),
                          alpha=.3, color='b')
-        plt.title('worst model')
-        plt.xlabel('experiment')
-        plt.ylabel('nlpd')
+        plt.title('worst model nlpd')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+        #cobeau
+        newlist = sorted(model_list, key=itemgetter('cobeau'))
+        plt.figure()
+        plt.scatter(X_test, y_test)
+        plt.plot(X_test[test_idx], model_list[0]['prediction'][test_idx],
+                 label='best model')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel() -
+                         model_list[0]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel() +
+                         model_list[0]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.title('best model cobeau')
+        plt.xlabel('x')
+        plt.ylabel('y')
+        plt.legend()
+
+        plt.figure()
+        plt.scatter(X_test, y_test)
+        plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
+                 label='worst')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel() -
+                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel() +
+                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.title('worst model cobeau')
+        plt.xlabel('x')
+        plt.ylabel('y')
         plt.legend()
 
     print('overall, it took {} seconds with {} experiments'.format(
