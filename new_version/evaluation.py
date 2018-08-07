@@ -3,6 +3,7 @@ import scipy
 import matplotlib.pyplot as plt
 import time
 import pandas as pd
+from operator import itemgetter
 
 
 def safe_ln(x):
@@ -79,6 +80,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
     train_idx = dataset.return_train_idx
 
     time_list = []
+    model_list = []
 
     for i in range(num_meta_epochs):
         start_time = time.time()
@@ -95,12 +97,24 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
             'X_test': X_test,
             'y_test': y_test
         })
+        cobeau = compute_CoBEAU(y_pred, y_test, y_var)
+        cobeau_list.append(cobeau)
+        nlpd = compute_nlpd(y_pred, y_test, y_var)
+        nlpd_list.append(nlpd)
+        cov = compute_coverage_probability(y_pred, y_test, y_var)
+        coverage_list.append(cov)
+        rsme = compute_rsme(y_pred, y_test)
+        rsme_list.append(rsme)
 
-        cobeau_list.append(compute_CoBEAU(y_pred, y_test, y_var))
-        nlpd_list.append(compute_nlpd(y_pred, y_test, y_var))
-        coverage_list.append(
-            compute_coverage_probability(y_pred, y_test, y_var))
-        rsme_list.append(compute_rsme(y_pred, y_test))
+        model_dict = {
+            'prediction': y_pred,
+            'uncertainty': y_var,
+            'rsme': rsme,
+            'nlpd': nlpd,
+            'cov': cov,
+            'cobeau': cobeau
+        }
+        model_list.append(model_dict)
 
         time_exp = time.time() - start_time
         time_list.append(time_exp)
@@ -115,28 +129,73 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
     if plot:
 
         plt.figure()
-        plt.plot(cobeau_list)
+        plt.plot([entry[1] for entry in cobeau_list], label='p')
+        plt.plot([entry[0] for entry in cobeau_list], label='r')
         plt.title('cobeau')
+        plt.legend()
         plt.xlabel('experiment')
         plt.ylabel('cobeau')
 
         plt.figure()
-        plt.plot(nlpd_list)
+        plt.plot(nlpd_list, label='nlpd')
         plt.title('nlpd')
         plt.xlabel('experiment')
         plt.ylabel('nlpd')
+        plt.legend()
 
         plt.figure()
-        plt.plot(coverage_list)
+        plt.plot(coverage_list, label='coverage')
         plt.title('coverage')
         plt.xlabel('experiment')
         plt.ylabel('coverage')
+        plt.legend()
 
         plt.figure()
-        plt.plot(rsme_list)
+        plt.plot(rsme_list, label='rmse')
         plt.title('rsme')
         plt.xlabel('experiment')
         plt.ylabel('rsme')
+        plt.legend()
+
+        #print best and worst model
+        newlist = sorted(model_list, key=itemgetter('nlpd'))
+        plt.figure()
+        plt.scatter(X_test, y_test)
+        plt.plot(X_test[test_idx], model_list[0]['prediction'][test_idx],
+                 label='best model')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel() -
+                         model_list[0]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel(),
+                         model_list[0]['prediction'][test_idx].ravel() +
+                         model_list[0]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.title('best model')
+        plt.xlabel('experiment')
+        plt.ylabel('nlpd')
+        plt.legend()
+
+        plt.figure()
+        plt.scatter(X_test, y_test)
+        plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
+                 label='best model')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel() -
+                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.fill_between(X_test[test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel(),
+                         model_list[-1]['prediction'][test_idx].ravel() +
+                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         alpha=.3, color='b')
+        plt.title('worst model')
+        plt.xlabel('experiment')
+        plt.ylabel('nlpd')
+        plt.legend()
 
     print('overall, it took {} seconds with {} experiments'.format(
         time.time() - meta_start_time, num_meta_epochs))
