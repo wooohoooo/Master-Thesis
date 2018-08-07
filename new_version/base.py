@@ -65,7 +65,8 @@ class EnsembleNetwork(object):
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
             seed=None,
-            adversarial=None):
+            adversarial=None,
+            initialisation_params=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -73,12 +74,14 @@ class EnsembleNetwork(object):
         self.num_features = num_features
         self.learning_rate = learning_rate
         self.adversarial = adversarial or False
+        self.initialisation_params = initialisation_params or {}
 
         #optional parameters
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
         self.activations = activations or [tf.nn.tanh
                                            ] * self.num_layers  #tanh,relu, 
-        self.initialisation_scheme = initialisation_scheme or tf.truncated_normal  #tf.random_uniform#
+        self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
+        #tf.contrib.layers.xavier_initializer  #tf.truncated_normal  #tf.random_uniform#
         self.num_epochs = num_epochs or meta_num_epochs
         self.seed = seed or None
 
@@ -117,11 +120,17 @@ class EnsembleNetwork(object):
         self.b_list = []
 
         #add input x first weights
+        #        self.w_list.append(
+        #            tf.Variable(
+        #                self.initialisation_scheme(
+        #                    [self.num_features, self.num_neurons[0]]),
+        #                name='w_0'))  #first Matrix
+        initialiser = self.initialisation_scheme(seed=self.seed,
+                                                 **self.initialisation_params)
         self.w_list.append(
             tf.Variable(
-                self.initialisation_scheme(
-                    [self.num_features, self.num_neurons[0]]),
-                name='w_0'))  #first Matrix
+                initialiser([self.num_features, self.num_neurons[0]]),
+                name='w_0'))
 
         #for each layer over 0 add a n x m matrix and a bias term
         for i, num_neuron in enumerate(self.num_neurons[1:]):
@@ -130,16 +139,14 @@ class EnsembleNetwork(object):
 
             self.w_list.append(
                 tf.Variable(
-                    self.initialisation_scheme([n_inputs, n_outputs]),
-                    name='w_' + str(i)))
+                    initialiser([n_inputs, n_outputs]), name='w_' + str(i)))
             self.b_list.append(
                 tf.Variable(tf.ones(shape=[n_inputs]), name='b_' + str(i)))
 
         #add last layer m  x 1 for output
         self.w_list.append(
-            tf.Variable(
-                self.initialisation_scheme([self.num_neurons[-1], 1]),
-                name='w_-1'))  #this is a regression
+            tf.Variable(initialiser([self.num_neurons[-1], 1]),
+                        name='w_-1'))  #this is a regression
         self.b_list.append(
             tf.Variable(
                 tf.ones(shape=[self.num_neurons[-1]]), name='b_' + str(
