@@ -16,7 +16,7 @@ class LinearDataset(base.BaseDataset):
         X, y = make_regression(n_samples=n_samples, n_features=1, noise=15,
                                random_state=self.seed,
                                shuffle=True)  #,n_informative=1,bias=100)
-        y = y / 10  #+ 10
+        y = y / n_samples  #10  #+ 10
         return X, y
 
 
@@ -27,8 +27,8 @@ class NonlinearDataset(base.BaseDataset):
         super(NonlinearDataset, self).__init__(n_samples=n_samples, seed=seed)
 
     def base_generating_function(self, X):
-        return np.sin(X).ravel() * 10 + np.random.normal(
-            0, 1, size=X.shape[0])  # + 10
+        return np.sin(X).ravel() * 1 + np.random.normal(
+            0, .1, size=X.shape[0])  # + 10
 
     def create_dataset(self):
 
