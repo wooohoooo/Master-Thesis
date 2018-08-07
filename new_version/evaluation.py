@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import time
 import pandas as pd
 from operator import itemgetter
+from os import system
+import datetime
 
 
 def safe_ln(x):
@@ -63,8 +65,9 @@ def compute_CoBEAU(prediction, y, variance):
 
 
 def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
-                      plot=True, model_params={}, datset_params={}):
+                      plot=True, model_params={}, datset_params={}, seed=42):
     meta_start_time = time.time()
+    print('experiment started at {}'.format(str(datetime.datetime.now())))
 
     pred_list = []
     cobeau_list = []
@@ -84,7 +87,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
 
     for i in range(num_meta_epochs):
         start_time = time.time()
-        model_params['seed'] = i + 42
+        model_params['seed'] = i + seed
 
         #model = model_creator(**model_params)  #create a model
         model = model_creator(**model_params)  #create a model
@@ -120,7 +123,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         time_list.append(time_exp)
         if i % 10 == 0:
             print(
-                'experiment number {} took {} seconds. That means the whole run will probably take {} more seconds and {} more minutes'.
+                'experiment number {} took {} seconds. That means the whole run will probably take {} more seconds and {} more minutes.'.
                 format(  #'1', '2', '3', '4'))
                     str(i + 1),
                     str(time_exp),
@@ -206,6 +209,8 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         'cobeau': [entry[1] for entry in cobeau_list],
         'coverage': coverage_list
     }
+    system('say Training and Evaluation has finished!')
+
     try:
         print(pd.DataFrame.from_records(value_dict).describe())
         print(pd.DataFrame.from_records(value_dict).describe().to_latex())
