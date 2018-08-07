@@ -4,37 +4,54 @@ import base
 import importlib
 importlib.reload(base)
 
-n_samples = 200
+num_samples = 200
 seed = 50  #50 is cool
 
 
 class LinearDataset(base.BaseDataset):
-    def __init__(self, n_samples=n_samples, seed=seed):
-        super(LinearDataset, self).__init__(n_samples=n_samples, seed=seed)
+    def __init__(self, num_samples=num_samples, seed=seed):
+        super(LinearDataset, self).__init__(num_samples=num_samples, seed=seed)
 
     def create_dataset(self):
-        X, y = make_regression(n_samples=n_samples, n_features=1, noise=15,
-                               random_state=self.seed,
+        X, y = make_regression(n_samples=self.num_samples, n_features=1,
+                               noise=15, random_state=self.seed,
                                shuffle=True)  #,n_informative=1,bias=100)
-        y = y / n_samples  #10  #+ 10
+        y = y / num_samples  #10  #+ 10
         return X, y
 
 
 class NonlinearDataset(base.BaseDataset):
-    def __init__(self, n_samples=n_samples, seed=seed,
-                 generating_function=None):
+    def __init__(self, num_samples=num_samples, seed=seed,
+                 generating_function=None, scope=9):  #sope=4.5
         self.generating_function = generating_function or self.base_generating_function
-        super(NonlinearDataset, self).__init__(n_samples=n_samples, seed=seed)
+        self.scope = scope
+        self.num_samples = num_samples
+
+        super(NonlinearDataset, self).__init__(num_samples=self.num_samples,
+                                               seed=seed)
 
     def base_generating_function(self, X):
         return np.sin(X).ravel() * 1 + np.random.normal(
             0, .1, size=X.shape[0])  # + 10
 
+    def make_X(self):
+        rng = np.random.RandomState(self.seed)
+
+        X = np.sort(self.scope * rng.rand(self.num_samples, 1), axis=0) - (
+            self.scope / 2)
+        return X
+
     def create_dataset(self):
 
         # Create a random dataset
-        rng = np.random.RandomState(self.seed)
-        X = np.sort(9 * rng.rand(n_samples, 1), axis=0)
+        X = self.make_X()
         y = self.generating_function(X)
 
         return X, y
+
+
+class XThreeDataset(NonlinearDataset):
+    def base_generating_function(self, X):
+        y = X.T**3 + np.random.normal(0, 3, size=X.shape[0])
+        y = y.T
+        return y.flatten()

@@ -65,7 +65,7 @@ def compute_CoBEAU(prediction, y, variance):
 
 
 def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
-                      plot=True, model_params={}, datset_params={}, seed=42):
+                      plot=True, model_params={}, dataset_params={}, seed=42):
     meta_start_time = time.time()
     print('experiment started at {}'.format(str(datetime.datetime.now())))
 
@@ -74,7 +74,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
     nlpd_list = []
     coverage_list = []
     rsme_list = []
-    dataset = dataset_creator(**datset_params)  #create a dataset
+    dataset = dataset_creator(**dataset_params)  #create a dataset
     X_train, y_train = dataset.train_dataset  #get dataset
 
     X_test, y_test = dataset.test_dataset  #get test data
@@ -87,7 +87,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
 
     for i in range(num_meta_epochs):
         start_time = time.time()
-        model_params['seed'] = i + seed
+        model_params['seed'] = i + 42 + seed
 
         #model = model_creator(**model_params)  #create a model
         model = model_creator(**model_params)  #create a model
@@ -163,7 +163,8 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         #print best and worst model
         newlist = sorted(model_list, key=itemgetter('nlpd'))
         plt.figure()
-        plt.scatter(X_test, y_test)
+        plt.scatter(X_test, y_test, label='test data')
+        plt.scatter(X_train, y_train, label='train data')
         plt.plot(X_test[test_idx], model_list[0]['prediction'][test_idx],
                  label='best model')
         plt.fill_between(X_test[test_idx].ravel(),
@@ -182,7 +183,9 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         plt.legend()
 
         plt.figure()
-        plt.scatter(X_test, y_test)
+        plt.scatter(X_test, y_test, label='test data')
+        plt.scatter(X_train, y_train, label='train data')
+
         plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
                  label='worst')
         plt.fill_between(X_test[test_idx].ravel(),
@@ -202,7 +205,8 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         #cobeau
         newlist = sorted(model_list, key=itemgetter('cobeau'))
         plt.figure()
-        plt.scatter(X_test, y_test)
+        plt.scatter(X_test, y_test, label='test data')
+        plt.scatter(X_train, y_train, label='train data')
         plt.plot(X_test[test_idx], model_list[0]['prediction'][test_idx],
                  label='best model')
         plt.fill_between(X_test[test_idx].ravel(),
@@ -221,7 +225,8 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         plt.legend()
 
         plt.figure()
-        plt.scatter(X_test, y_test)
+        plt.scatter(X_test, y_test, label='test data')
+        plt.scatter(X_train, y_train, label='train data')
         plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
                  label='worst')
         plt.fill_between(X_test[test_idx].ravel(),

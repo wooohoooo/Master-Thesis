@@ -8,8 +8,8 @@ meta_num_epochs = 10
 
 
 class BaseDataset(object):
-    def __init__(self, n_samples, seed):
-        self.n_samples = n_samples
+    def __init__(self, num_samples, seed):
+        self.num_samples = num_samples
         self.seed = seed
         self.X, self.y = self.create_dataset()
         self.X_train, self.X_test, self.y_train, self.y_test = self.train_test_split(
