@@ -2,19 +2,22 @@ import matplotlib.pyplot as plt
 import numpy as np
 from networks import CopyNetwork
 from base import EnsembleNetwork
+import scipy
 
 
 class BootstrapEnsemble(object):
     def __init__(self, ensemble=None, num_features=None, num_epochs=10,
-                 num_ensembles=5):
+                 num_ensembles=5, seed=42):
         self.num_features = num_features or 1
+        self.seed = seed
+
         self.ensemble_list = ensemble or [EnsembleNetwork] * num_ensembles
         self.num_epochs = num_epochs
         self.initialise_ensemble()
 
     def initialise_ensemble(self):
         self.ensemble = [
-            member(num_features=self.num_features, seed=i + 42,
+            member(num_features=self.num_features, seed=i + self.seed,
                    num_epochs=self.num_epochs)
             for i, member in enumerate(self.ensemble_list)
         ]
@@ -54,6 +57,10 @@ class BootstrapEnsemble(object):
         y_hat = self.predict(X)
         return np.sqrt(np.mean((y_hat - y)**2))
 
+    def compute_error_vec(self, X, y):
+        y_hat = self.predict(X)
+        return y - y_hat
+
     def compute_nlpd(self, X, y):
         y_hat, std = self.get_mean_and_std(X, std=True)
 
@@ -88,15 +95,15 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
     #TODO: decide if replace every epoch or meta-epoch
     #TODO: Early stopping if error does not decrease
 
-    def __init__(self, num_features=None, num_epochs=1, num_models=10,
-                 model_name='copynetwork'):
+    def __init__(self, num_features=None, num_epochs=10, num_models=3,
+                 model_name='copynetwork', seed=42):
         self.model_name = 'checkpoints/' + model_name
-        self.model = CopyNetwork()
+        self.model = CopyNetwork(seed=seed)
         self.train_iteration = 0
 
         super(BootstrapThroughTimeBobStrap,
               self).__init__(ensemble=None, num_features=num_features,
-                             num_epochs=50, num_ensembles=1)
+                             num_epochs=num_epochs, num_ensembles=1, seed=seed)
         self.num_epochs = num_epochs
         self.num_models = num_models
 
@@ -133,11 +140,11 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
 
 class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
-                 model_name='diversitycopynetwork'):
+                 model_name='diversitycopynetwork', seed=42):
 
-        super(ForcedDiversityBootstrapThroughTime,
-              self).__init__(num_features=None, num_epochs=1, num_models=10,
-                             model_name='forceddiversitycopynetwork')
+        super(ForcedDiversityBootstrapThroughTime, self).__init__(
+            num_features=None, num_epochs=num_epochs, num_models=num_models,
+            model_name='forceddiversitycopynetwork', seed=seed)
 
     def fit(self, X, y, X_test=None, y_test=None):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
@@ -161,11 +168,11 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
 
 class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
-                 model_name='diversitycopynetwork'):
+                 model_name='diversitycopynetwork', seed=42):
 
-        super(ForcedDiversityBootstrapThroughTime,
-              self).__init__(num_features=None, num_epochs=1, num_models=10,
-                             model_name='forceddiversitycopynetwork')
+        super(ForcedDiversityBootstrapThroughTime2, self).__init__(
+            num_features=None, num_epochs=num_epochs, num_models=num_models,
+            model_name='forceddiversitycopynetwork', seed=seed)
 
     def fit(self, X, y, X_test=None, y_test=None):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
@@ -174,31 +181,37 @@ class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
             name = self.model_name + '_checkpoint_' + str(self.train_iteration)
 
             self.model.load(self.checkpoints[-1])  #load most recent model
-            prediction_before = self.model.predict(X, y)
+            error_vec_before = self.compute_error_vec(X, y)**2
             self.model.fit(X, y)  #train most recent model
-            prediction_after = self.model.predict(X, y)
+            error_vec_after = self.model.compute_error_vec(X, y)**2
 
-            difference = np.substract(prediction_before, prediction_after)
+            #maybe use self.compute_error!!!!
 
-            if rsme_before > rsme_after:
-                self.model.save(name)  #save newest model as checkpoint
-                self.checkpoints.append(name)  #add newest checkpoint
+            kl_divergence = scipy.stats.entropy(error_vec_before,
+                                                error_vec_after)
+            print(kl_divergence)
 
-                if len(
-                        self.checkpoints
-                ) > self.num_models:  #if we reached max number of stored models
-                    self.checkpoints.pop(0)  #delete oldest checkpoint
+            if np.round(kl_divergence, decimals=1) <= 0:
+                continue
+
+            self.model.save(name)  #save newest model as checkpoint
+            self.checkpoints.append(name)  #add newest checkpoint
+
+            if len(
+                    self.checkpoints
+            ) > self.num_models:  #if we reached max number of stored models
+                self.checkpoints.pop(0)  #delete oldest checkpoint
 
 
 class ForcedDiversityBootstrapThroughTime3(BootstrapThroughTimeBobStrap):
     """implements only getting the std from the ensemble, pred_mean is just last prediction"""
 
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
-                 model_name='diversitycopynetwork'):
+                 model_name='diversitycopynetwork', seed=42):
 
-        super(ForcedDiversityBootstrapThroughTime3,
-              self).__init__(num_features=None, num_epochs=1, num_models=10,
-                             model_name='forceddiversitycopynetwork')
+        super(ForcedDiversityBootstrapThroughTime3, self).__init__(
+            num_features=None, num_epochs=num_epochs, num_models=num_models,
+            model_name='forceddiversitycopynetwork', seed=seed)
 
     def predict(self, X):
         self.model.load(self.checkpoints[-1])

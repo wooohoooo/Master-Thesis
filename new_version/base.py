@@ -335,3 +335,7 @@ class EnsembleNetwork(object):
         #std = pred_dict['stds']        #print(y_hat.shape,std.shape,y.shape)
 
         return np.sqrt(np.mean((y_hat - y)**2))
+
+    def compute_error_vec(self, X, y):
+        y_hat = self.predict(X)
+        return y - y_hat

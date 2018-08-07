@@ -14,7 +14,7 @@ class LinearDataset(base.BaseDataset):
 
     def create_dataset(self):
         X, y = make_regression(n_samples=n_samples, n_features=1, noise=15,
-                               random_state=seed,
+                               random_state=self.seed,
                                shuffle=True)  #,n_informative=1,bias=100)
         y = y / 10  #+ 10
         return X, y

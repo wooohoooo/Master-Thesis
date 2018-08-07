@@ -1,10 +1,16 @@
-from base import EnsembleNetwork
+import base
+import importlib
+importlib.reload(base)
 from helpers import lazy_property
 import tensorflow as tf
 import numpy as np
+import os
+os.environ['TF_CPP_MIN_VLOG_LEVEL'] = '3'
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
+tf.logging.set_verbosity(0)
 
 
-class CopyNetwork(EnsembleNetwork):
+class CopyNetwork(base.EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 10],
@@ -56,7 +62,7 @@ class CopyNetwork(EnsembleNetwork):
         #new_saver.restore(self.session, tf.train.latest_checkpoint('./'))
 
 
-class DropoutNetwork(EnsembleNetwork):
+class DropoutNetwork(base.EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 10],
@@ -131,7 +137,7 @@ class DropoutNetwork(EnsembleNetwork):
         return pred_mean, pred_std
 
 
-class NlpdNetwork(EnsembleNetwork):
+class NlpdNetwork(base.EnsembleNetwork):
     def __init__(
             self,
             num_neurons=[10, 5, 5, 5, 5],
