@@ -139,6 +139,7 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
 
 
 class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
+    # TODO: try out 'burn in' Phase.
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
                  model_name='diversitycopynetwork', seed=42):
 

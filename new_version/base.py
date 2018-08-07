@@ -78,7 +78,7 @@ class EnsembleNetwork(object):
 
         #optional parameters
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
-        self.activations = activations or [tf.nn.tanh
+        self.activations = activations or [tf.nn.relu  #tf.nn.tanh
                                            ] * self.num_layers  #tanh,relu, 
         self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
         #tf.contrib.layers.xavier_initializer  #tf.truncated_normal  #tf.random_uniform#
