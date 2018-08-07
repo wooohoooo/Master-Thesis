@@ -138,6 +138,7 @@ class DropoutNetwork(base.EnsembleNetwork):
 
 
 class NlpdNetwork(base.EnsembleNetwork):
+    #TODO: Move parameter initialisation into base so that changes there affect this Network, too
     def __init__(
             self,
             num_neurons=[10, 5, 5, 5, 5],
@@ -149,7 +150,8 @@ class NlpdNetwork(base.EnsembleNetwork):
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
             seed=None,
-            adversarial=None):
+            adversarial=None,
+            initialisation_params=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -157,12 +159,13 @@ class NlpdNetwork(base.EnsembleNetwork):
         self.num_features = num_features
         self.learning_rate = learning_rate
         self.adversarial = adversarial or False
+        self.initialisation_params = initialisation_params or {}
 
         #optional parameters
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
         self.activations = activations or [tf.nn.relu
                                            ] * self.num_layers  #tanh,relu, 
-        self.initialisation_scheme = initialisation_scheme or tf.random_uniform  #tf.truncated_normal#
+        self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
         self.num_epochs = num_epochs or 10
         self.seed = seed or None
 
@@ -197,11 +200,12 @@ class NlpdNetwork(base.EnsembleNetwork):
         self.w_list = []
         self.b_list = []
 
+        initialiser = self.initialisation_scheme(seed=self.seed,
+                                                 **self.initialisation_params)
         #add input x first weights
         self.w_list.append(
             tf.Variable(
-                self.initialisation_scheme(
-                    [self.num_features, self.num_neurons[0]]),
+                initialiser([self.num_features, self.num_neurons[0]]),
                 name='w_0'))  #first Matrix
 
         #for each layer over 0 add a n x m matrix and a bias term
@@ -211,16 +215,15 @@ class NlpdNetwork(base.EnsembleNetwork):
 
             self.w_list.append(
                 tf.Variable(
-                    self.initialisation_scheme([n_inputs, n_outputs]),
-                    name='w_' + str(i)))
+                    initialiser([n_inputs, n_outputs]), name='w_' + str(i)))
             self.b_list.append(
                 tf.Variable(tf.ones(shape=[n_inputs]), name='b_' + str(i)))
         #THis is new: Build two separate outputs for mean and std
         self.p_w = tf.Variable(
-            self.initialisation_scheme([self.num_neurons[-1], 1]),
+            initialiser([self.num_neurons[-1], 1]),
             name='w_-1')  #this is a regression
         self.std_w = tf.Variable(
-            self.initialisation_scheme([self.num_neurons[-1], 1]),
+            initialiser([self.num_neurons[-1], 1]),
             name='w_std')  #this is a regression
 
         self.b_list.append(
@@ -307,7 +310,8 @@ class LrNetwork(NlpdNetwork):
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
             seed=None,
-            adversarial=None):
+            adversarial=None,
+            initialisation_params=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -321,11 +325,12 @@ class LrNetwork(NlpdNetwork):
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
         self.activations = activations or [tf.nn.relu
                                            ] * self.num_layers  #tanh,relu, 
-        self.initialisation_scheme = initialisation_scheme or tf.truncated_normal  #.random_uniform#tf.truncated_normal#
+        self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
         self.num_epochs = num_epochs or 10
         self.seed = seed or None
         self.learning_rate_init = learning_rate
         self.adversarial = adversarial or False
+        self.initialisation_params = initialisation_params or {}
 
         #initialise graph
         self.g = tf.Graph()
