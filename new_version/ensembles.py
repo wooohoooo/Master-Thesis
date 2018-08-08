@@ -136,8 +136,19 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
 
         return prediction_list
 
-    def fit(self, X, y, X_test=None, y_test=None):
+    def fit(self, X, y, X_test=None, y_test=None, burn_in=3):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
+        ####NEWWWWW
+        if self.train_iteration == 0:
+            for i in range(burn_in):
+                self.model.load(self.checkpoints[-1])  #load most recent model
+                self.model.fit(X, y)
+                name = self.model_name + '_burn_in_model_{}'.format(
+                    str(burn_in))
+                self.model.save(name)
+                self.checkpoints = [name]
+
+        #####OLDDDD
         for i in range(self.num_epochs):
             self.train_iteration += 1
             name = self.model_name + '_checkpoint_' + str(self.train_iteration)

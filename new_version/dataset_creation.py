@@ -1,4 +1,5 @@
 from sklearn.datasets import make_regression
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 import base
 import importlib
@@ -12,11 +13,15 @@ class LinearDataset(base.BaseDataset):
     def __init__(self, num_samples=num_samples, seed=seed):
         super(LinearDataset, self).__init__(num_samples=num_samples, seed=seed)
 
-    def create_dataset(self):
+    def create_dataset(self, scale=False):
         X, y = make_regression(n_samples=self.num_samples, n_features=1,
                                noise=15, random_state=self.seed,
                                shuffle=True)  #,n_informative=1,bias=100)
         y = y / num_samples  #10  #+ 10
+        if scale:
+            y = (y - min(y)) / (max(y) - min(y))
+            X = (X - min(X)) / (max(X) - min(X))
+
         return X, y
 
 
@@ -41,11 +46,14 @@ class NonlinearDataset(base.BaseDataset):
             self.scope / 2)
         return X
 
-    def create_dataset(self):
+    def create_dataset(self, scale=False):
 
         # Create a random dataset
         X = self.make_X()
         y = self.generating_function(X)
+        if scale:
+            y = (y - min(y)) / (max(y) - min(y))
+            X = (X - min(X)) / (max(X) - min(X))
 
         return X, y
 

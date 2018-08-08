@@ -157,7 +157,7 @@ class NlpdNetwork(base.EnsembleNetwork):
         self.num_neurons = num_neurons
         self.num_layers = len(num_neurons)
         self.num_features = num_features
-        self.learning_rate = learning_rate
+        self.learning_rate = learning_rate or 0.001
         self.adversarial = adversarial or False
         self.initialisation_params = initialisation_params or {}
 
@@ -328,7 +328,7 @@ class LrNetwork(NlpdNetwork):
         self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
         self.num_epochs = num_epochs or 10
         self.seed = seed or None
-        self.learning_rate_init = learning_rate
+        self.learning_rate_init = learning_rate or 0.001
         self.adversarial = adversarial or False
         self.initialisation_params = initialisation_params or {}
 
