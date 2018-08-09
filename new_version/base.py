@@ -12,8 +12,14 @@ class BaseDataset(object):
         self.num_samples = num_samples
         self.seed = seed
         self.X, self.y = self.create_dataset()
+        x_outlier = self.X[-1]
+        self.X = self.X[:-1]
+        y_outlier = self.y[-1]
+        self.y = self.y[:-1]
         self.X_train, self.X_test, self.y_train, self.y_test = self.train_test_split(
         )
+        self.X_test[-1] = x_outlier
+        self.y_test[-1] = y_outlier
         self.train_idx = self.get_idx(self.X_train)
         self.test_idx = self.get_idx(self.X_test)
 
@@ -66,7 +72,8 @@ class EnsembleNetwork(object):
             num_epochs=None,  #defaults to 1,
             seed=None,
             adversarial=None,
-            initialisation_params=None):
+            initialisation_params=None,
+            l2=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -75,6 +82,7 @@ class EnsembleNetwork(object):
         self.learning_rate = learning_rate or 0.001
         self.adversarial = adversarial or False
         self.initialisation_params = initialisation_params or {}
+        self.l2 = l2 or False
 
         #optional parameters
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
@@ -186,6 +194,12 @@ class EnsembleNetwork(object):
         #error is mean squared error of placehilder y and prediction
         error = tf.losses.mean_squared_error(self.y, y_hat)  #tf.square(
         #self.y - y_hat)  #
+
+        if self.l2:
+            # Loss function with L2 Regularization with beta=0.01
+            regularizers = tf.reduce_sum(
+                [tf.nn.l2_loss(weights) for weights in self.w_list])
+            error = tf.reduce_mean(error + 0.01 * regularizers)
 
         return error
 

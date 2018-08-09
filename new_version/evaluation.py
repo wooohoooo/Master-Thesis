@@ -1,6 +1,8 @@
 import numpy as np
 import scipy
 import matplotlib.pyplot as plt
+plt.rcParams['figure.figsize'] = [15, 5]
+
 import time
 import pandas as pd
 from operator import itemgetter
@@ -161,23 +163,24 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         plt.legend()
 
         #print best and worst model
-        newlist = sorted(model_list, key=itemgetter('nlpd'))
+        newlist = sorted(model_list, key=itemgetter('nlpd'), reverse=True)
         plt.figure()
         plt.scatter(X_test, y_test, label='test data')
         plt.scatter(X_train, y_train, label='train data')
-        plt.plot(X_test[test_idx], model_list[0]['prediction'][test_idx],
+        plt.plot(X_test[test_idx], newlist[0]['prediction'][test_idx],
                  label='best model')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel() -
-                         model_list[0]['uncertainty'][test_idx].ravel(),
-                         alpha=.3, color='b')
+                         newlist[0]['prediction'][test_idx].ravel(),
+                         newlist[0]['prediction'][test_idx].ravel() -
+                         newlist[0]['uncertainty'][test_idx].ravel(), alpha=.3,
+                         color='b')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel() +
-                         model_list[0]['uncertainty'][test_idx].ravel(),
-                         alpha=.3, color='b')
-        plt.title('best model nlpd')
+                         newlist[0]['prediction'][test_idx].ravel(),
+                         newlist[0]['prediction'][test_idx].ravel() +
+                         newlist[0]['uncertainty'][test_idx].ravel(), alpha=.3,
+                         color='b')
+        plt.title(
+            'best model nlpd with a value of {}'.format(newlist[0]['nlpd']))
         plt.xlabel('x')
         plt.ylabel('y')
         plt.legend()
@@ -186,40 +189,42 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         plt.scatter(X_test, y_test, label='test data')
         plt.scatter(X_train, y_train, label='train data')
 
-        plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
+        plt.plot(X_test[test_idx], newlist[-1]['prediction'][test_idx],
                  label='worst')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel() -
-                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel() -
+                         newlist[-1]['uncertainty'][test_idx].ravel(),
                          alpha=.3, color='b')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel() +
-                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel() +
+                         newlist[-1]['uncertainty'][test_idx].ravel(),
                          alpha=.3, color='b')
-        plt.title('worst model nlpd')
+        plt.title('worst model nlpd with a value of {}'.format(
+            model_list[-1]['nlpd']))
         plt.xlabel('x')
         plt.ylabel('y')
         plt.legend()
         #cobeau
-        newlist = sorted(model_list, key=itemgetter('cobeau'))
+        newlist = sorted(model_list, key=itemgetter('cobeau'), reverse=True)
         plt.figure()
         plt.scatter(X_test, y_test, label='test data')
         plt.scatter(X_train, y_train, label='train data')
-        plt.plot(X_test[test_idx], model_list[0]['prediction'][test_idx],
+        plt.plot(X_test[test_idx], newlist[0]['prediction'][test_idx],
                  label='best model')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel() -
-                         model_list[0]['uncertainty'][test_idx].ravel(),
-                         alpha=.3, color='b')
+                         newlist[0]['prediction'][test_idx].ravel(),
+                         newlist[0]['prediction'][test_idx].ravel() -
+                         newlist[0]['uncertainty'][test_idx].ravel(), alpha=.3,
+                         color='b')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel(),
-                         model_list[0]['prediction'][test_idx].ravel() +
-                         model_list[0]['uncertainty'][test_idx].ravel(),
-                         alpha=.3, color='b')
-        plt.title('best model cobeau')
+                         newlist[0]['prediction'][test_idx].ravel(),
+                         newlist[0]['prediction'][test_idx].ravel() +
+                         newlist[0]['uncertainty'][test_idx].ravel(), alpha=.3,
+                         color='b')
+        plt.title('best model cobeau with a value of {}'.format(
+            newlist[0]['cobeau']))
         plt.xlabel('x')
         plt.ylabel('y')
         plt.legend()
@@ -227,19 +232,20 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         plt.figure()
         plt.scatter(X_test, y_test, label='test data')
         plt.scatter(X_train, y_train, label='train data')
-        plt.plot(X_test[test_idx], model_list[-1]['prediction'][test_idx],
+        plt.plot(X_test[test_idx], newlist[-1]['prediction'][test_idx],
                  label='worst')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel() -
-                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel() -
+                         newlist[-1]['uncertainty'][test_idx].ravel(),
                          alpha=.3, color='b')
         plt.fill_between(X_test[test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel(),
-                         model_list[-1]['prediction'][test_idx].ravel() +
-                         model_list[-1]['uncertainty'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel(),
+                         newlist[-1]['prediction'][test_idx].ravel() +
+                         newlist[-1]['uncertainty'][test_idx].ravel(),
                          alpha=.3, color='b')
-        plt.title('worst model cobeau')
+        plt.title('worst model cobeau with a value of {}'.format(
+            newlist[-1]['cobeau']))
         plt.xlabel('x')
         plt.ylabel('y')
         plt.legend()

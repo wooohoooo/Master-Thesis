@@ -46,10 +46,14 @@ class NonlinearDataset(base.BaseDataset):
             self.scope / 2)
         return X
 
-    def create_dataset(self, scale=False):
+    def create_dataset(self, scale=False, add_outlier=True):
 
         # Create a random dataset
+
         X = self.make_X()
+        if add_outlier:
+            X = np.append(X, self.scope)
+
         y = self.generating_function(X)
         if scale:
             y = (y - min(y)) / (max(y) - min(y))

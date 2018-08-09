@@ -152,7 +152,8 @@ class NlpdNetwork(base.EnsembleNetwork):
             num_epochs=None,  #defaults to 1,
             seed=None,
             adversarial=None,
-            initialisation_params=None):
+            initialisation_params=None,
+            l2=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -161,6 +162,7 @@ class NlpdNetwork(base.EnsembleNetwork):
         self.learning_rate = learning_rate or 0.001
         self.adversarial = adversarial or False
         self.initialisation_params = initialisation_params or {}
+        self.l2 = l2 or None
 
         #optional parameters
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
@@ -281,6 +283,12 @@ class NlpdNetwork(base.EnsembleNetwork):
         second_term = tf.div(tf.square(tf.subtract(self.y, y_hat)), std_hat)
         error = tf.add(tf.add(first_term, second_term), 1.0)
 
+        if self.l2:
+            # Loss function with L2 Regularization with beta=0.01
+            regularizers = tf.reduce_sum(
+                [tf.nn.l2_loss(weights) for weights in self.w_list])
+            error = tf.reduce_mean(error + 0.01 * regularizers)
+
         return error
 
     def predict(self, X):
@@ -312,12 +320,14 @@ class LrNetwork(NlpdNetwork):
             num_epochs=None,  #defaults to 1,
             seed=None,
             adversarial=None,
-            initialisation_params=None):
+            initialisation_params=None,
+            l2=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
         self.num_layers = len(num_neurons)
         self.num_features = num_features
+        self.l2 = l2 or False
 
         #optional parameters
         #self.optimizer = optimizer or tf.train.GradientDescentOptimizer

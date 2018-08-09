@@ -6,7 +6,7 @@ import scipy
 import tensorflow as tf
 
 
-class BootstrapEnsemble(object):
+class VanillaEnsemble(object):
     def __init__(self, ensemble=None, num_features=None, num_epochs=10,
                  num_ensembles=5, seed=42, num_neurons=[10, 5, 3],
                  initialisation_scheme=None, activations=None):
@@ -29,12 +29,17 @@ class BootstrapEnsemble(object):
             for i, member in enumerate(self.ensemble_list)
         ]
 
-    def fit(self, X, y):
+    def fit(self, X, y, bootstrap=False):
         '''This is where we build in the Online Bootstrap'''
         #for i in range(self.num_epochs):
 
         for estimator in self.ensemble:
-            estimator.fit(X, y)
+            if bootstrap:
+                X_est, y_est, _ = estimator.shuffle_data(X, y)
+                estimator.fit(X_est, y_est)
+
+            else:
+                estimator.fit(X, y)
 
     def get_prediction_list(self, X):
         pred_list = []
@@ -100,6 +105,20 @@ class BootstrapEnsemble(object):
         return correlation
 
 
+class BootstrapEnsemble(VanillaEnsemble):
+    #def __init__(self, ensemble=None, num_features=None, num_epochs=10,
+    #             num_ensembles=5, seed=42, num_neurons=[10, 5, 3],
+    #             initialisation_scheme=None, activations=None):
+    ##    super(BootstrapEnsemble, self).__init__(ensemble=ensemble, num_features=num_features, num_epochs=,
+    #             num_ensembles=5, seed=42, num_neurons=[10, 5, 3],
+    #             initialisation_scheme=None, activations=None)
+    def fit(self, X, y):
+        '''This is where we build in the Online Bootstrap'''
+        #for i in range(self.num_epochs):
+
+        super(BootstrapEnsemble, self).fit(X, y, True)
+
+
 class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
     #TODO: decide if replace every epoch or meta-epoch
     #TODO: Early stopping if error does not decrease
@@ -139,8 +158,9 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
     def fit(self, X, y, X_test=None, y_test=None, burn_in=3):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
         ####NEWWWWW
-        print('doing a burn in of {} epochs'.format(str(burn_in)))
-        if self.train_iteration == 0:
+        if self.train_iteration < num_epochs:
+            print('doing a burn in of {} epochs'.format(str(burn_in)))
+
             for i in range(burn_in):
                 self.model.load(self.checkpoints[-1])  #load most recent model
                 self.model.fit(X, y)
@@ -148,6 +168,8 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
                     str(burn_in))
                 self.model.save(name)
                 self.checkpoints = [name]
+        else:
+            print('no burn in because training continues')
 
         #####OLDDDD
         for i in range(self.num_epochs):
