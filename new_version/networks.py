@@ -74,12 +74,15 @@ class DropoutNetwork(base.EnsembleNetwork):
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
             seed=None,
-            adversarial=None):
+            adversarial=None,
+            l2=None):
 
         super(DropoutNetwork, self).__init__(
-            num_neurons, num_features, learning_rate, activations,
-            dropout_layers, initialisation_scheme, optimizer, num_epochs, seed,
-            adversarial)
+            num_neurons=num_neurons, num_features=num_features,
+            learning_rate=learning_rate, activations=activations,
+            dropout_layers=dropout_layers,
+            initialisation_scheme=initialisation_scheme, optimizer=optimizer,
+            num_epochs=num_epochs, seed=seed, adversarial=adversarial, l2=l2)
 
     @lazy_property
     def predict_graph(self):

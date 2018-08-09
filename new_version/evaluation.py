@@ -102,7 +102,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
             'X_test': X_test,
             'y_test': y_test
         })
-        cobeau = compute_CoBEAU(y_pred, y_test, y_var)
+        cobeau = compute_CoBEAU(y_pred, y_test, y_var)[1]
         cobeau_list.append(cobeau)
         nlpd = compute_nlpd(y_pred, y_test, y_var)
         nlpd_list.append(nlpd)
@@ -134,8 +134,8 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
     if plot:
 
         plt.figure()
-        plt.plot([entry[1] for entry in cobeau_list], label='p')
-        plt.plot([entry[0] for entry in cobeau_list], label='r')
+        plt.plot(cobeau_list, label='p')
+        #plt.plot([entry[0] for entry in cobeau_list], label='r')
         plt.title('cobeau')
         plt.legend()
         plt.xlabel('experiment')
@@ -256,7 +256,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
     value_dict = {
         'nlpd': nlpd_list,
         'rsme': rsme_list,
-        'cobeau': [entry[1] for entry in cobeau_list],
+        'cobeau': cobeau_list,
         'coverage': coverage_list
     }
     system('say Training and Evaluation has finished!')
