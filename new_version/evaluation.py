@@ -8,6 +8,9 @@ import pandas as pd
 from operator import itemgetter
 from os import system
 import datetime
+import json
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 
 def safe_ln(x):
@@ -267,3 +270,71 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         return pd.DataFrame.from_records(value_dict)
     except:
         return value_dict
+
+
+from sklearn.grid_search import ParameterGrid
+import tensorflow as tf
+
+
+#paraeter search
+def gridsearch(model, dataset_creator, trials=10, seeds=[50, 100, 150],
+               num_neurons=[[2, 3, 2], [10, 10, 10], [1, 1, 1]],
+               learning_rates=[0.1, 0.01, 0.001],
+               activation_schemes=[tf.nn.leaky_relu, tf.sigmoid, tf.nn.tanh],
+               initialisation_schemes=[
+                   tf.keras.initializers.he_normal,
+                   tf.contrib.layers.xavier_initializer
+               ], l2=[False]):
+    file_name = 'gridsearched_parameters/model_{}'.format(
+        str(type(model)).replace('.', '_'))
+    seed = 50
+    ds = dataset_creator(seed=50)
+    X_train, y_train = ds.train_dataset
+    X_test, y_test = ds.test_dataset
+    plt.scatter(X_train, y_train)
+    plt.scatter(X_test, y_test)
+
+    num_layers = len(num_neurons[0])
+    activations = [[x] * num_layers for x in activation_schemes]
+
+    param_grid = {
+        'num_neurons': num_neurons,
+        'activations': activations,
+        'initialisation_scheme': initialisation_schemes,
+        'learning_rate': learning_rates,
+        'seed': seeds
+    }
+
+    grid = ParameterGrid(param_grid)
+    print(len(grid))
+    score_list = []
+    time_list = []
+    print('experiment started at {}'.format(str(datetime.datetime.now())))
+    for i, params in enumerate(grid):
+        start_time = time.time()
+        scores = []
+        for j in range(trials):
+            net = model(**params)
+            net.fit(X_train, y_train)
+            scores.append(net.score(X_test, y_test))
+        score = np.mean(scores)
+        var = np.var(scores)
+        score_list.append({'params': params, 'score': score, 'var': var})
+        end_time = time.time()
+
+        time_list.append(end_time - start_time)
+
+        print(
+            'took {} seconds ({} minutes) to do {} out of {}. Overall, estimated time is: {} minutes'.
+            format(
+                str(end_time - start_time),
+                str((end_time - start_time) / 60),
+                str(i),
+                str(len(grid)), str((len(grid) - i) * np.mean(time_list) /
+                                    10)))
+    score_list = sorted(score_list, key=itemgetter('score'), reverse=False)
+    pp.pprint(score_list[0])
+    pp.pprint(score_list[-1])
+    with open(file_name, 'w') as fout:
+        json.dump(str(score_list), fout)
+    return score_list

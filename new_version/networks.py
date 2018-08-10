@@ -13,7 +13,7 @@ tf.logging.set_verbosity(0)
 class CopyNetwork(base.EnsembleNetwork):
     def __init__(
             self,
-            num_neurons=[10, 10],
+            num_neurons=[10, 10, 10],
             num_features=1,
             learning_rate=0.001,
             activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
@@ -65,7 +65,7 @@ class CopyNetwork(base.EnsembleNetwork):
 class DropoutNetwork(base.EnsembleNetwork):
     def __init__(
             self,
-            num_neurons=[10, 10],
+            num_neurons=[10, 10, 10],
             num_features=1,
             learning_rate=0.001,
             activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
@@ -75,14 +75,21 @@ class DropoutNetwork(base.EnsembleNetwork):
             num_epochs=None,  #defaults to 1,
             seed=None,
             adversarial=None,
-            l2=None):
+            l2=None,
+            l=None,
+            num_preds=None,
+            keep_prob=None):
+
+        self.num_preds = num_preds or 50
+        self.keep_prob = keep_prob or 0.85
 
         super(DropoutNetwork, self).__init__(
             num_neurons=num_neurons, num_features=num_features,
             learning_rate=learning_rate, activations=activations,
             dropout_layers=dropout_layers,
             initialisation_scheme=initialisation_scheme, optimizer=optimizer,
-            num_epochs=num_epochs, seed=seed, adversarial=adversarial, l2=l2)
+            num_epochs=num_epochs, seed=seed, adversarial=adversarial, l2=l2,
+            l=l)
 
     @lazy_property
     def predict_graph(self):
@@ -96,7 +103,7 @@ class DropoutNetwork(base.EnsembleNetwork):
             a = tf.matmul(layer_input, w, name='matmul_' + str(i))
 
             if i == self.num_layers:  #This is new - Dropout!
-                a = tf.nn.dropout(a, 0.90)  #0.9 = keep_prob
+                a = tf.nn.dropout(a, self.keep_prob)  #0.9 = keep_prob
 
             #z + bias
             if i < self.num_layers:
@@ -119,7 +126,7 @@ class DropoutNetwork(base.EnsembleNetwork):
         pred_list = [
             self.session.run(self.predict_graph,
                              feed_dict={self.X: X}).squeeze()
-            for i in range(15)
+            for i in range(self.num_preds)
         ]
 
         pred_mean = np.mean(pred_list, axis=0)
@@ -127,6 +134,12 @@ class DropoutNetwork(base.EnsembleNetwork):
         return pred_mean  #, pred_std
 
     def get_mean_and_std(self, X):
+        #compute tau http://mlg.eng.cam.ac.uk/yarin/blog_3d801aa532c1ce.html
+        num_datapoints = len(X)
+        length_scale = 1
+        tau = (length_scale**2 * self.keep_prob) / (2 * num_datapoints *
+                                                    self.l)
+
         X = self.check_input_dimensions(X)
 
         pred_list = [
@@ -136,7 +149,7 @@ class DropoutNetwork(base.EnsembleNetwork):
         ]
 
         pred_mean = np.mean(pred_list, axis=0)
-        pred_std = np.std(pred_list, axis=0)
+        pred_std = np.var(pred_list, axis=0) + tau  #**-1
         pred_std[pred_std == 0] = 0.01
         return pred_mean, pred_std
 

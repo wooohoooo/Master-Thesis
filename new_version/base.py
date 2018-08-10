@@ -73,7 +73,8 @@ class EnsembleNetwork(object):
             seed=None,
             adversarial=None,
             initialisation_params=None,
-            l2=None):
+            l2=None,
+            l=None):
 
         #necessary parameters
         self.num_neurons = num_neurons
@@ -83,6 +84,7 @@ class EnsembleNetwork(object):
         self.adversarial = adversarial or False
         self.initialisation_params = initialisation_params or {}
         self.l2 = l2 or False
+        self.l = l or 0.05
 
         #optional parameters
         self.optimizer = optimizer or tf.train.AdamOptimizer  #tf.train.GradientDescentOptimizer
@@ -199,7 +201,7 @@ class EnsembleNetwork(object):
             # Loss function with L2 Regularization with beta=0.01
             regularizers = tf.reduce_sum(
                 [tf.nn.l2_loss(weights) for weights in self.w_list])
-            error = tf.reduce_mean(error + 0.01 * regularizers)
+            error = tf.reduce_mean(error + self.l * regularizers)
 
         return error
 
@@ -360,6 +362,9 @@ class EnsembleNetwork(object):
         #std = pred_dict['stds']        #print(y_hat.shape,std.shape,y.shape)
 
         return np.sqrt(np.mean((y_hat - y)**2))
+
+    def score(self, X, y):
+        return self.compute_rsme(X, y)
 
     def compute_error_vec(self, X, y):
         y_hat = self.predict(X)
