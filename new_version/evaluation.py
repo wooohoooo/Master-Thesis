@@ -309,7 +309,8 @@ def gridsearch(model, dataset_creator, trials=10, seeds=[50, 100, 150],
     print(len(grid))
     score_list = []
     time_list = []
-    print('experiment started at {}'.format(str(datetime.datetime.now())))
+    print('experiment started at {}. Doing {} trials each for {} combinations'.
+          format(str(datetime.datetime.now()), str(trials), str(len(grid))))
     for i, params in enumerate(grid):
         start_time = time.time()
         scores = []

@@ -215,7 +215,7 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
 
         ####NEWWWWW
-        if self.train_iteration < self.num_epochs:
+        if self.train_iteration == 0:
             print('doing a burn in of {} epochs'.format(str(burn_in)))
 
             for i in range(burn_in):
@@ -265,7 +265,7 @@ class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
 
         ####NEWWWWW
-        if self.train_iteration < self.num_epochs:
+        if self.train_iteration == 0:
             print('doing a burn in of {} epochs'.format(str(burn_in)))
 
             for i in range(burn_in):
