@@ -10,6 +10,7 @@ from os import system
 import datetime
 import json
 import pprint
+import hashlib
 pp = pprint.PrettyPrinter(indent=4)
 
 
@@ -277,16 +278,20 @@ import tensorflow as tf
 
 
 #paraeter search
-def gridsearch(model, dataset_creator, trials=10, seeds=[50, 100, 150],
-               num_neurons=[[2, 3, 2], [10, 10, 10], [1, 1, 1]],
+def gridsearch(model, dataset_creator, trials=10, seeds=[500, 1000, 1500],
+               num_neurons=[[2, 3, 2], [10, 10, 10]],
                learning_rates=[0.1, 0.01, 0.001],
                activation_schemes=[tf.nn.leaky_relu, tf.sigmoid, tf.nn.tanh],
                initialisation_schemes=[
                    tf.keras.initializers.he_normal,
                    tf.contrib.layers.xavier_initializer
-               ], l2=[False]):
-    file_name = 'gridsearched_parameters/model_{}'.format(
-        str(type(model)).replace('.', '_'))
+               ], l2=[False, True]):
+    file_name = 'gridsearched_parameters/model_{}_{}'.format(
+        str(type(model())).replace('.', '_').replace(' ', '').replace('<', '')
+        .replace('>', '').replace("'", ""),
+        str(type(dataset_creator())).replace('.', '_').replace(
+            ' ', '').replace('<', '').replace('>', '').replace("'", ""))
+    print(file_name)
     seed = 50
     ds = dataset_creator(seed=50)
     X_train, y_train = ds.train_dataset
@@ -339,3 +344,102 @@ def gridsearch(model, dataset_creator, trials=10, seeds=[50, 100, 150],
     with open(file_name, 'w') as fout:
         json.dump(str(score_list), fout)
     return score_list
+
+
+class ThompsonGridSearch(object):
+    """takes a parameter grid, a meta-model 
+    and a model for which the paramters are to be optimised 
+    and performs thompson parameter search"""
+
+    def __init__(self, param_grid, dataset_creator, thompson_model,
+                 test_model):
+        self.grid = ParameterGrid(param_grid)  #parameter grid
+        self.val_grid = self.create_dataset_from_grid()
+
+        self.thompson_model = thompson_model(
+            num_features=self.
+            input_size)  #this is the model we're actually training
+        self.test_model = test_model  #need to be initialiseable
+        self.ds = dataset_creator()
+
+    def create_input_from_params(self, params):
+        pd_params = pd.from_records
+        return np.array(list(params.items()))
+
+    def create_dataset_from_grid(self):
+        df = pd.DataFrame(list(self.grid))
+
+        df['activations'] = df['activations'].astype(str)
+        df['initialisation_scheme'] = df['initialisation_scheme'].astype(str)
+        df['num_neurons'] = df['num_neurons'].astype(str)
+        df['seed'] = df['seed'].astype(str)
+        df['l2'] = df['l2'].astype(int)
+        df_dummies = pd.DataFrame(pd.get_dummies(df))
+        vals = df_dummies.values
+        self.input_size = vals.shape[1]
+        return df_dummies.values
+
+    def predict_grid(self):
+        """predicts values for the whole grid"""
+        predictions = {}
+        for params in self.grid:
+            """Check if this is already measured in which case add the measurement"""
+            mean, var = self.thompson_model.get_mean_and_std(params)
+            predictions[params] = {'mean': mean, 'var': var}
+        return predictions
+
+    def get_sample_grid(self):
+        predictions = []
+        for params, X in zip(self.grid, self.val_grid):
+            """Check if this is already measured in which case add the measurement"""
+            #print(X)
+            X = self.thompson_model.check_input_dimensions(X)
+            #print(X)
+            mean, var = self.thompson_model.get_mean_and_std(np.transpose(X))
+            sample = self.sample_from_prediction(mean, var)
+            predictions.append({
+                'mean': mean,
+                'var': var,
+                'sample': sample,
+                'params': params,
+                'X': X
+            })
+        pred_sorted = sorted(
+            predictions, key=itemgetter('sample'),
+            reverse=False)  #or true? DO I minimise or maximise? RSME = Minimise
+        return predictions
+
+    def plot_sample_grid(self):
+        predictions = self.get_sample_grid()
+        X = [
+            abs(hash(str(prediction['params'])) % (10**8))
+            for prediction in predictions
+        ]
+        y = [str(prediction['mean']) for prediction in predictions]
+        samples = [str(prediction['sample']) for prediction in predictions]
+        plt.figure()
+        plt.scatter(X, samples)
+        plt.figure()
+        plt.scatter(X, y)
+
+    def observe(self):
+        predictions = self.get_sample_grid()
+        params = predictions[0]['params']
+        X_train, y_train = self.ds.train_dataset
+        X_test, y_test = self.ds.test_dataset
+        new_model = self.test_model(**params)
+        new_model.fit(X_train, y_train)
+        real_score = new_model.score(X_test, y_test)
+        return real_score
+
+    def sample_from_prediction(self, mean, var):
+        return np.random.normal(loc=mean, scale=var, size=None)
+
+    def train_params(self, params):
+        """trains a model on the params. Predicts X/y. Uses the outcome to train thompson_model."""
+
+        X_train, y_train = self.ds.train_dataset
+        X_test, y_test = self.ds.test_dataset
+        new_model = self.test_model(**params).fit(X_train, y_train)
+        real_score = new_model.score(X_test, y_test)
+        self.thompson_model.fit(params, real_score)

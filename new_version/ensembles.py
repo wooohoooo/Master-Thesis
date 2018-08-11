@@ -4,6 +4,7 @@ from networks import CopyNetwork
 from base import EnsembleNetwork
 import scipy
 import tensorflow as tf
+from sklearn.model_selection import train_test_split
 
 
 class VanillaEnsemble(object):
@@ -119,11 +120,25 @@ class BootstrapEnsemble(VanillaEnsemble):
     ##    super(BootstrapEnsemble, self).__init__(ensemble=ensemble, num_features=num_features, num_epochs=,
     #             num_ensembles=5, seed=42, num_neurons=[10, 5, 3],
     #             initialisation_scheme=None, activations=None)
-    def fit(self, X, y):
+
+    def fit(self, X, y, bootstrap=False):
         '''This is where we build in the Online Bootstrap'''
         #for i in range(self.num_epochs):
 
-        super(BootstrapEnsemble, self).fit(X, y, True)
+        for estimator in self.ensemble:
+            if bootstrap:
+                X_est, y_est, _, _ = train_test_split(
+                    X, y, test_size=0.33,
+                    random_state=self.seed + estimator.seed)
+                X_est, y_est, _ = estimator.shuffle_data(X_est, y_est)
+
+                X_est = estimator.check_input_dimensions(X_est)
+                y_est = estimator.check_input_dimensions(y_est)
+                estimator.fit(X_est, y_est)
+
+            else:
+                estimator.fit(X, y)
+        #super(BootstrapEnsemble, self).fit(X, y, True)
 
 
 class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
@@ -202,14 +217,14 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
                  model_name='diversitycopynetwork', seed=42,
                  num_neurons=[10, 5, 3], initialisation_scheme=None,
-                 activations=None, l2=None):
+                 activations=None, l2=None, learning_rate=None):
 
         super(ForcedDiversityBootstrapThroughTime, self).__init__(
             num_features=None, num_epochs=num_epochs, num_models=num_models,
             model_name='forceddiversitycopynetwork', seed=seed,
             num_neurons=num_neurons,
             initialisation_scheme=initialisation_scheme,
-            activations=activations, l2=l2)
+            activations=activations, l2=l2, learning_rate=learning_rate)
 
     def fit(self, X, y, X_test=None, y_test=None, burn_in=3):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
@@ -314,14 +329,14 @@ class ForcedDiversityBootstrapThroughTime3(
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
                  model_name='diversitycopynetwork', seed=42,
                  num_neurons=[10, 5, 3], initialisation_scheme=None,
-                 activations=None, l2=None):
+                 activations=None, l2=None, learning_rate=None):
 
         super(ForcedDiversityBootstrapThroughTime3, self).__init__(
             num_features=None, num_epochs=num_epochs, num_models=num_models,
             model_name='forceddiversitycopynetwork', seed=seed,
             num_neurons=num_neurons,
             initialisation_scheme=initialisation_scheme,
-            activations=activations, l2=l2)
+            activations=activations, l2=l2, learning_rate=learning_rate)
 
     def predict(self, X):
         self.model.load(self.checkpoints[-1])

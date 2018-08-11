@@ -150,7 +150,7 @@ class DropoutNetwork(base.EnsembleNetwork):
 
         pred_mean = np.mean(pred_list, axis=0)
         pred_std = np.var(pred_list, axis=0) + tau  #**-1
-        pred_std[pred_std == 0] = 0.01
+        #pred_std[pred_std == 0] = 0.01
         return pred_mean, pred_std
 
 
