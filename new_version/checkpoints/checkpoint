@@ -1,2 +1,2 @@
-model_checkpoint_path: "copynetwork_burn_in_model_3"
-all_model_checkpoint_paths: "copynetwork_burn_in_model_3"
+model_checkpoint_path: "copynetworkcheckpoint_0"
+all_model_checkpoint_paths: "copynetworkcheckpoint_0"

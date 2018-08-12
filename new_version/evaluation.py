@@ -355,10 +355,11 @@ class ThompsonGridSearch(object):
                  test_model):
         self.grid = ParameterGrid(param_grid)  #parameter grid
         self.val_grid = self.create_dataset_from_grid()
+        self.observed = []
 
         self.thompson_model = thompson_model(
-            num_features=self.
-            input_size)  #this is the model we're actually training
+            num_features=self.input_size,
+            learning_rate=0.1)  #this is the model we're actually training
         self.test_model = test_model  #need to be initialiseable
         self.ds = dataset_creator()
 
@@ -396,6 +397,7 @@ class ThompsonGridSearch(object):
             X = self.thompson_model.check_input_dimensions(X)
             #print(X)
             mean, var = self.thompson_model.get_mean_and_std(np.transpose(X))
+            var = np.sqrt(var)
             sample = self.sample_from_prediction(mean, var)
             predictions.append({
                 'mean': mean,
@@ -407,39 +409,85 @@ class ThompsonGridSearch(object):
         pred_sorted = sorted(
             predictions, key=itemgetter('sample'),
             reverse=False)  #or true? DO I minimise or maximise? RSME = Minimise
-        return predictions
+        return pred_sorted
 
     def plot_sample_grid(self):
         predictions = self.get_sample_grid()
         X = [
-            abs(hash(str(prediction['params'])) % (10**8))
-            for prediction in predictions
+            #str(abs(hash(str(prediction['params'])) % (10**8)))
+            'feature{}'.format(i) for i, prediction in enumerate(predictions)
         ]
-        y = [str(prediction['mean']) for prediction in predictions]
-        samples = [str(prediction['sample']) for prediction in predictions]
+        y = [prediction['mean'] for prediction in predictions]
+        y_var = [prediction['var'] for prediction in predictions]
+        samples = [prediction['sample'] for prediction in predictions]
+        #plt.figure()
+        #plt.scatter(X, samples, color='r', label='sample')
+        #plt.figure()
+        #plt.scatter(X, y, color='b', label='mean')
+        #plt.plot(X, samples, label='samples')
+        #plt.plot(X, y, label='means')
+        plt.bar(X, y, alpha=0.4)
+        plt.errorbar(X, y, yerr=y_var, alpha=0.4)
+        X_observed = [
+            str(abs(hash(str(observation['params'])) % (10**8)))
+            for observation in self.observed
+        ]
+        y_observed = [observation['score'] for observation in self.observed]
+        plt.scatter(X_observed, y_observed, color='red', label='observations')
+        plt.legend()
         plt.figure()
-        plt.scatter(X, samples)
-        plt.figure()
-        plt.scatter(X, y)
+        plt.plot(X, samples, label='samples')
+        plt.plot(X, y, label='means')
+        print(len(X))
+        print(len(y))
+        print(len(y_var))
+        #X + y
+        #y + y_var
+        plt.fill_between(X, y,
+                         np.array(y) + np.array(y_var), alpha=.3, color='b')
+        plt.fill_between(X, y,
+                         np.array(y) - np.array(y_var), alpha=.3, color='b')
+        plt.scatter(X_observed, y_observed, color='red', label='observations')
 
-    def observe(self):
+        plt.legend()
+
+    def observe(self, return_params=True):
         predictions = self.get_sample_grid()
-        params = predictions[0]['params']
+        params = predictions[-1]['params']
+        params_as_data = predictions[-1]['X']
         X_train, y_train = self.ds.train_dataset
         X_test, y_test = self.ds.test_dataset
         new_model = self.test_model(**params)
         new_model.fit(X_train, y_train)
         real_score = new_model.score(X_test, y_test)
+        self.observed.append({
+            'params': params,
+            'score': real_score,
+            'X': params_as_data
+        })
+        if return_params:
+            return np.expand_dims(np.array(real_score), 1), params_as_data
         return real_score
+
+    def train_params(self, num_epochs=10):
+        real_score, params = self.observe()
+        #real_score = 
+        for i in range(num_epochs):
+            self.thompson_model.fit(
+                np.array([params.T]), real_score, shuffle=False)
+
+    def goforit(self, num_times):
+        for i in range(num_times):
+            self.train_params()
 
     def sample_from_prediction(self, mean, var):
         return np.random.normal(loc=mean, scale=var, size=None)
 
-    def train_params(self, params):
+        #def train_params_old(self, params):
         """trains a model on the params. Predicts X/y. Uses the outcome to train thompson_model."""
 
-        X_train, y_train = self.ds.train_dataset
-        X_test, y_test = self.ds.test_dataset
-        new_model = self.test_model(**params).fit(X_train, y_train)
-        real_score = new_model.score(X_test, y_test)
-        self.thompson_model.fit(params, real_score)
+        #X_train, y_train = self.ds.train_dataset
+        #X_test, y_test = self.ds.test_dataset
+        #new_model = self.test_model(**params,).fit(X_train, y_train)
+        #real_score = new_model.score(X_test, y_test)
+        #self.thompson_model.fit(params, real_score)

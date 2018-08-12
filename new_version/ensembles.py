@@ -23,6 +23,7 @@ class VanillaEnsemble(object):
         self.num_epochs = num_epochs
         self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer
         self.initialise_ensemble()
+        print('initialising Ensemble {}'.format(type(self)))
 
     def initialise_ensemble(self):
         self.ensemble = [
@@ -34,7 +35,7 @@ class VanillaEnsemble(object):
             for i, member in enumerate(self.ensemble_list)
         ]
 
-    def fit(self, X, y, bootstrap=False):
+    def fit(self, X, y, bootstrap=False, shuffle=False):
         '''This is where we build in the Online Bootstrap'''
         #for i in range(self.num_epochs):
 
@@ -112,6 +113,27 @@ class VanillaEnsemble(object):
         #np.correlate(error.flatten(),variance.flatten())
         return correlation
 
+    def check_input_dimensions(self, array):
+        """Makes sure arrays are compatible with Tensorflow input
+        can't have array.shape = (X,),
+        needs to be array.shape = (X,1)"""
+        #y = array
+        #y = np.reshape(y, [y.shape[0], 1])
+        #return y
+        if len(array.shape) <= 1:
+
+            return np.expand_dims(array, 1)
+        else:
+
+            return array
+
+    def shuffle_data(self, a, b):
+        assert len(a) == len(b)
+        p = np.random.permutation(len(a))
+        sorted_index = np.argsort(p)
+        p = np.squeeze(p)
+        return a[p], b[p], sorted_index
+
 
 class BootstrapEnsemble(VanillaEnsemble):
     #def __init__(self, ensemble=None, num_features=None, num_epochs=10,
@@ -121,7 +143,7 @@ class BootstrapEnsemble(VanillaEnsemble):
     #             num_ensembles=5, seed=42, num_neurons=[10, 5, 3],
     #             initialisation_scheme=None, activations=None)
 
-    def fit(self, X, y, bootstrap=False):
+    def fit(self, X, y, bootstrap=True, shuffle=False):
         '''This is where we build in the Online Bootstrap'''
         #for i in range(self.num_epochs):
 
@@ -130,11 +152,11 @@ class BootstrapEnsemble(VanillaEnsemble):
                 X_est, y_est, _, _ = train_test_split(
                     X, y, test_size=0.33,
                     random_state=self.seed + estimator.seed)
-                X_est, y_est, _ = estimator.shuffle_data(X_est, y_est)
+                #X_est, y_est, _ = estimator.shuffle_data(X_est, y_est)
 
                 X_est = estimator.check_input_dimensions(X_est)
                 y_est = estimator.check_input_dimensions(y_est)
-                estimator.fit(X_est, y_est)
+                estimator.fit(X_est, y_est, shuffle)
 
             else:
                 estimator.fit(X, y)
@@ -151,11 +173,14 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
                  learning_rate=None):
         self.model_name = 'checkpoints/' + model_name
         self.activations = activations
+        self.num_features = num_features or 1
         self.model = CopyNetwork(
             seed=seed, initialisation_scheme=initialisation_scheme,
             activations=activations, num_neurons=num_neurons,
-            num_epochs=num_epochs, learning_rate=learning_rate)
+            num_epochs=num_epochs, learning_rate=learning_rate,
+            num_features=self.num_features)
         self.train_iteration = 0
+        print('initialising')
         self.l2 = l2 or None
 
         super(BootstrapThroughTimeBobStrap, self).__init__(
@@ -180,7 +205,7 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
 
         return prediction_list
 
-    def fit(self, X, y, X_test=None, y_test=None, burn_in=3):
+    def fit(self, X, y, X_test=None, y_test=None, burn_in=3, shuffle=False):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
         ####NEWWWWW
         if self.train_iteration == 0:
@@ -202,7 +227,7 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
             name = self.model_name + '_checkpoint_' + str(self.train_iteration)
 
             self.model.load(self.checkpoints[-1])  #load most recent model
-            self.model.fit(X, y)  #train most recent model
+            self.model.fit(X, y, shuffle)  #train most recent model
             self.model.save(name)  #save newest model as checkpoint
             self.checkpoints.append(name)  #add newest checkpoint
 
@@ -210,6 +235,7 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
                     self.checkpoints
             ) > self.num_models:  #if we reached max number of stored models
                 self.checkpoints.pop(0)  #delete oldest checkpoint
+        assert (self.train_iteration != 0)
 
 
 class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
@@ -226,7 +252,7 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
             initialisation_scheme=initialisation_scheme,
             activations=activations, l2=l2, learning_rate=learning_rate)
 
-    def fit(self, X, y, X_test=None, y_test=None, burn_in=3):
+    def fit(self, X, y, X_test=None, y_test=None, burn_in=3, shuffle=False):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
 
         ####NEWWWWW
@@ -262,6 +288,8 @@ class ForcedDiversityBootstrapThroughTime(BootstrapThroughTimeBobStrap):
                 ) > self.num_models:  #if we reached max number of stored models
                     self.checkpoints.pop(0)  #delete oldest checkpoint
 
+        assert (self.train_iteration != 0)
+
 
 class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
     def __init__(self, num_features=None, num_epochs=1, num_models=10,
@@ -276,7 +304,7 @@ class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
             initialisation_scheme=initialisation_scheme,
             activations=activations, l2=l2)
 
-    def fit(self, X, y, X_test=None, y_test=None, burn_in=3):
+    def fit(self, X, y, X_test=None, y_test=None, burn_in=3, shuffle=False):
         """trains the most recent model in checkpoint list and replaces the oldest checkpoint if enough checkpoints exist"""
 
         ####NEWWWWW
@@ -320,6 +348,7 @@ class ForcedDiversityBootstrapThroughTime2(BootstrapThroughTimeBobStrap):
                     self.checkpoints
             ) > self.num_models:  #if we reached max number of stored models
                 self.checkpoints.pop(0)  #delete oldest checkpoint
+        assert (self.train_iteration != 0)
 
 
 class ForcedDiversityBootstrapThroughTime3(
