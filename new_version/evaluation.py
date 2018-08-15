@@ -415,7 +415,8 @@ class ThompsonGridSearch(object):
         predictions = self.get_sample_grid()
         X = [
             #str(abs(hash(str(prediction['params'])) % (10**8)))
-            'feature{}'.format(i) for i, prediction in enumerate(predictions)
+            #'feature{}'.format(i) for i, prediction in enumerate(predictions)
+            i for i, prediction in enumerate(predictions)
         ]
         y = [prediction['mean'] for prediction in predictions]
         y_var = [prediction['var'] for prediction in predictions]
@@ -451,6 +452,9 @@ class ThompsonGridSearch(object):
 
         plt.legend()
 
+        plt.figure()
+        plt.plot(y_observed, label='samples')
+
     def observe(self, return_params=True):
         predictions = self.get_sample_grid()
         params = predictions[-1]['params']
@@ -474,7 +478,7 @@ class ThompsonGridSearch(object):
         #real_score = 
         for i in range(num_epochs):
             self.thompson_model.fit(
-                np.array([params.T]), real_score, shuffle=False)
+                np.array([params.T]), np.array(real_score), shuffle=False)
 
     def goforit(self, num_times):
         for i in range(num_times):

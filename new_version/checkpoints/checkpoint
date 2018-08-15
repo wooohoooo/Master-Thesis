@@ -1,2 +1,2 @@
-model_checkpoint_path: "copynetworkcheckpoint_0"
-all_model_checkpoint_paths: "copynetworkcheckpoint_0"
+model_checkpoint_path: "forceddiversitycopynetwork_checkpoint_2"
+all_model_checkpoint_paths: "forceddiversitycopynetwork_checkpoint_2"

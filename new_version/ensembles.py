@@ -149,7 +149,7 @@ class BootstrapEnsemble(VanillaEnsemble):
 
         for estimator in self.ensemble:
             if bootstrap:
-                X_est, y_est, _, _ = train_test_split(
+                X_est, _, y_est, _ = train_test_split(
                     X, y, test_size=0.33,
                     random_state=self.seed + estimator.seed)
                 #X_est, y_est, _ = estimator.shuffle_data(X_est, y_est)
@@ -213,7 +213,7 @@ class BootstrapThroughTimeBobStrap(BootstrapEnsemble):
 
             for i in range(burn_in):
                 self.model.load(self.checkpoints[-1])  #load most recent model
-                self.model.fit(X, y)
+                self.model.fit(X, y, shuffle)
                 name = self.model_name + '_burn_in_model_{}'.format(
                     str(burn_in))
                 self.model.save(name)
