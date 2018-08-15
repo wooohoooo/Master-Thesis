@@ -72,9 +72,9 @@ class XThreeDataset(NonlinearDataset):
         super(XThreeDataset, self).__init__(num_samples=self.num_samples,
                                             seed=seed)
 
-        self.X_test = self.X_test[:-1]
-        self.y_test = self.y_test[:-1]
-        self.test_idx = self.test_idx[:-1]
+        #self.X_test = self.X_test[:-1]
+        self.y_test[-1] = 0  #self.y_test[:-1]
+        #self.test_idx = self.test_idx[:-1]
 
     def base_generating_function(self, X):
         y = X.T**3 + np.random.normal(0, 3, size=X.shape[0])

@@ -247,7 +247,9 @@ class EnsembleNetwork(object):
 
         if shuffle == True:
             epoch_X, epoch_y, _ = self.shuffle_data(
-                np.squeeze(epoch_X), np.squeeze(epoch_y))
+                #np.squeeze(epoch_X), np.squeeze(epoch_y))
+                epoch_X,
+                epoch_y)
         #print(epoch_X[:10])
         epoch_X = self.check_input_dimensions(epoch_X)
         epoch_y = self.check_input_dimensions(epoch_y)
@@ -260,8 +262,14 @@ class EnsembleNetwork(object):
     def train_one(self, batch_X, batch_y):
         batch_X = self.check_input_dimensions(batch_X)
         batch_y = self.check_input_dimensions(batch_y)
-        #print(X.shape)
-        #print(y.shape)
+        batch_X = np.array(batch_X).T
+
+        batch_X, _, batch_y, _ = train_test_split(
+            batch_X, batch_y, test_size=0.00, random_state=self.seed)
+
+        #print('what')
+        #print('X size: {}'.format(batch_X.shape))
+        #print('y size: {}'.format(batch_y.shape))
         self.session.run(self.train_graph,
                          feed_dict={self.X: batch_X,
                                     self.y: batch_y})

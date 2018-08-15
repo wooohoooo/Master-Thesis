@@ -22,7 +22,7 @@ class CopyNetwork(base.EnsembleNetwork):
             optimizer=None,  #defaults to GradiendDescentOptimizer,
             num_epochs=None,  #defaults to 1,
             seed=None,
-            adversarial=None):
+            adversarial=None, ):
 
         super(CopyNetwork, self).__init__(
             num_neurons, num_features, learning_rate, activations,

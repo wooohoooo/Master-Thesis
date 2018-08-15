@@ -41,7 +41,7 @@ class VanillaEnsemble(object):
 
         for estimator in self.ensemble:
             if bootstrap:
-                X_est, y_est, _ = estimator.shuffle_data(X, y)
+                X_est, y_est, _ = self.shuffle_data(X, y)
                 estimator.fit(X_est, y_est)
 
             else:

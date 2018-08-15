@@ -16,7 +16,7 @@ def safe_ln(x):
 
 class BaseEnsemble(object):
     """Base Object for Ensembles
-	Mostly there to give the plotting utility to all it's children"""
+    Mostly there to give the plotting utility to all it's children"""
 
     def plot_residuals(self, X_train, y_train, X_test, y_test):
         plt.scatter(
@@ -216,13 +216,21 @@ class BaseEnsemble(object):
         }
 
 
+class sklearn_wrapper(object):
+    pass
+
+
+#from sklearn.neural_network import MLPRegressor#(hidden_layer_sizes=(100, ), activation=’relu’, solver=’adam’, alpha=0.0001, batch_size=’auto’, learning_rate=’constant’, learning_rate_init=0.001, power_t=0.5, max_iter=200, shuffle=True, random_state=None, tol=0.0001, verbose=False, warm_start=False, momentum=0.9, nesterovs_momentum=True, early_stopping=False, validation_fraction=0.1, beta_1=0.9, beta_2=0.999, epsilon=1e-08)
+
+
 class RegressionEnsemble(BaseEnsemble):
     def __init__(self, num_models=None, model_type=None, seed=None,
-                 num_features=None, learning_rate=None):
+                 num_features=None, learning_rate=None, X=None, y=None):
         self.num_models = num_models or 10
-        self.model_type = model_type or DecisionTreeRegressor
+        self.model_type = model_type or MLPRegressor
         self.seed = seed or 42
         self.regressor_list = []
+        #self.fit(X, y)
 
     def fit(self, X_train, y_train):
         for i in range(self.num_models):
@@ -234,7 +242,7 @@ class RegressionEnsemble(BaseEnsemble):
 
                 new_regressor = self.model_type()  #random_state=self.seed+i)
 
-            new_regressor.fit(X_train, y_train)
+            new_regressor.partial_fit(X_train, y_train)
             self.regressor_list.append(new_regressor)
         return 'ensemble of {} {}s is hired and at the ready'.format(
             self.num_models, self.model_type.__name__)

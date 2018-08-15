@@ -351,15 +351,16 @@ class ThompsonGridSearch(object):
     and a model for which the paramters are to be optimised 
     and performs thompson parameter search"""
 
-    def __init__(self, param_grid, dataset_creator, thompson_model,
-                 test_model):
+    def __init__(self, param_grid, dataset_creator, thompson_model, test_model,
+                 model_params):
         self.grid = ParameterGrid(param_grid)  #parameter grid
         self.val_grid = self.create_dataset_from_grid()
         self.observed = []
+        self.model_params = model_params
 
         self.thompson_model = thompson_model(
             num_features=self.input_size,
-            learning_rate=0.1)  #this is the model we're actually training
+            **self.model_params)  #this is the model we're actually training
         self.test_model = test_model  #need to be initialiseable
         self.ds = dataset_creator()
 
@@ -470,15 +471,29 @@ class ThompsonGridSearch(object):
             'X': params_as_data
         })
         if return_params:
-            return np.expand_dims(np.array(real_score), 1), params_as_data
+            #return np.expand_dims(np.array(real_score), 1), params_as_data
+            return np.array(real_score), params_as_data
         return real_score
 
-    def train_params(self, num_epochs=10):
+    def train_params(self, num_epochs=100):
         real_score, params = self.observe()
         #real_score = 
+        #print(np.array([params.T]))
+        #print(np.array(real_score))
+        #print(np.array([params.T]).shape)
+        #print(np.array(real_score).shape)
+        X = np.array([np.array(params.T)])[0]
+        y = np.expand_dims(np.array(real_score), 0)  #np.array(real_score)
+        print('huh')
+        print(X.shape)
+        print(y.shape)
+        print(X)
+        print(y)
+
         for i in range(num_epochs):
-            self.thompson_model.fit(
-                np.array([params.T]), np.array(real_score), shuffle=False)
+            #print(np.array([params.T]))
+            #print(np.array(real_score))
+            self.thompson_model.fit(X, y, shuffle=False)
 
     def goforit(self, num_times):
         for i in range(num_times):
