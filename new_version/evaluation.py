@@ -377,7 +377,7 @@ class ThompsonGridSearch(object):
         if learning_rate_true == True:
             lrs = self.scaler.fit_transform(
                 df['learning_rate'].values.reshape(-1, 1)).flatten()
-            print(lrs)
+            #print(lrs)
             df['learning_rates'] = lrs
         #df['learning_rate'] = df['learning_rate'].astype('str')
 
@@ -461,9 +461,9 @@ class ThompsonGridSearch(object):
         plt.figure()
         plt.plot(X, samples, label='samples')
         plt.plot(X, y, label='means')
-        print(len(X))
-        print(len(y))
-        print(len(y_var))
+        #print(len(X))
+        #print(len(y))
+        #print(len(y_var))
         #X + y
         #y + y_var
         plt.fill_between(X, y,
@@ -476,7 +476,7 @@ class ThompsonGridSearch(object):
 
         plt.figure()
         plt.scatter(X_observed, y_observed, label='observations')
-        print(self.observed)
+        #print(self.observed)
 
     def observe(self, return_params=True):
         lr_scale = False
@@ -515,8 +515,8 @@ class ThompsonGridSearch(object):
         #print(np.array(real_score))
         #print(np.array([params.T]).shape)
         #print(np.array(real_score).shape)
-        X = np.array([np.array(params.T)])[0]
-        y = np.expand_dims(np.array(real_score), 0)  #np.array(real_score)
+        X_new = np.array([np.array(params.T)])[0]
+        y_new = np.expand_dims(np.array(real_score), 0)  #np.array(real_score)
         #print('huh')
         #print(X.shape)
         #print(y.shape)
@@ -524,27 +524,49 @@ class ThompsonGridSearch(object):
         #print(y)
         ##print(X)
         #print(y)
+
+        #print(X.shape)
+
+        #print(y.shape)
+
+        #print(X)
+        #print(y)
         if online_bootstrap:
             old_X = np.squeeze(
                 np.array([x['X'] for x in self.observed]), axis=2)
             old_y = np.array([y['score'] for y in self.observed])
+            num_points = len(old_y) + 1
+            ps = [1 / (i + 1) for i in range(num_points)][::-1]
+            mask = np.array(np.random.binomial(num_points, ps), dtype=bool)
+            #print(mask)
+            #print(y)
+            #print(y[mask])
             #print('oldX{}'.format(old_X))
             #print(old_y)
             #print(old_X.shape)
             #print(X.shape)
             #print(old_y.shape)
             #print(y.shape)
-            X = np.append(X.T, np.array(old_X).T, axis=1)
-            y = np.append(y, np.array(old_y))
-
-            #print(X.shape)
-
-            #print(y.shape)
-
-            #print(X)
-            #print(y)
-
+            X = np.append(X_new.T, np.array(old_X).T, axis=1)
+            y = np.append(y_new, np.array(old_y))
+            #print(zip(X, y))
+            #X = X.T[mask].T
+            #y = y.T[:][mask].T
+            #print(zip(X, y))
+            print(X.T[0])
+            print(X_new)
+            print(y[0])
+            print(y_new)
+            print('new X is in there: {}'.format(X.T in X_new))
+            print('new y is in there: {}'.format(y in y_new))
+            assert (X.T in X_new) == (y in y_new)
+            print('mean probability is {}'.format(np.mean(mask)))
+            #print(y[mask])
+            #print(mask.shape)
+            print(y.shape)
+            print(X.shape)
         for i in range(num_epochs):
+
             #print(np.array([params.T]))
             #print(np.array(real_score))
             self.thompson_model.fit(X.T, y.T, shuffle=False)
