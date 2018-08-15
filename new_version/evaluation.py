@@ -273,7 +273,7 @@ def repeat_experiment(model_creator, dataset_creator, num_meta_epochs=2,
         return value_dict
 
 
-from sklearn.grid_search import ParameterGrid
+from sklearn.model_selection import ParameterGrid
 import tensorflow as tf
 
 
@@ -375,7 +375,8 @@ class ThompsonGridSearch(object):
         df['initialisation_scheme'] = df['initialisation_scheme'].astype(str)
         df['num_neurons'] = df['num_neurons'].astype(str)
         df['seed'] = df['seed'].astype(str)
-        df['l2'] = df['l2'].astype(int)
+        df['l2'] = df['l2'].astype(str)
+        df['learning_rate'] = df['learning_rate'].astype('str')
         df_dummies = pd.DataFrame(pd.get_dummies(df))
         vals = df_dummies.values
         self.input_size = vals.shape[1]
@@ -410,7 +411,7 @@ class ThompsonGridSearch(object):
         pred_sorted = sorted(
             predictions, key=itemgetter('sample'),
             reverse=False)  #or true? DO I minimise or maximise? RSME = Minimise
-        return pred_sorted
+        return predictions
 
     def plot_sample_grid(self):
         predictions = self.get_sample_grid()
@@ -428,13 +429,24 @@ class ThompsonGridSearch(object):
         #plt.scatter(X, y, color='b', label='mean')
         #plt.plot(X, samples, label='samples')
         #plt.plot(X, y, label='means')
+        plt.scatter(X, y)
+        plt.figure()
         plt.bar(X, y, alpha=0.4)
         plt.errorbar(X, y, yerr=y_var, alpha=0.4)
+
+        #print(self.observed)
+        param_obs = [str(observation['X']) for observation in self.observed]
+        eXes = [str(observation['X']) for observation in predictions]
+        #print('exes{}'.format(eXes))
+        #print('params{}'.format(param_obs))
+
         X_observed = [
-            str(abs(hash(str(observation['params'])) % (10**8)))
-            for observation in self.observed
+            eXes.index(np.array(observation)) for observation in param_obs
         ]
+
         y_observed = [observation['score'] for observation in self.observed]
+        #print(eXes)
+        #print(param_obs)
         plt.scatter(X_observed, y_observed, color='red', label='observations')
         plt.legend()
         plt.figure()
@@ -449,17 +461,21 @@ class ThompsonGridSearch(object):
                          np.array(y) + np.array(y_var), alpha=.3, color='b')
         plt.fill_between(X, y,
                          np.array(y) - np.array(y_var), alpha=.3, color='b')
-        plt.scatter(X_observed, y_observed, color='red', label='observations')
+        #plt.scatter(X_observed, y_observed, color='red', label='observations')
 
         plt.legend()
 
         plt.figure()
-        plt.plot(y_observed, label='samples')
+        plt.scatter(X_observed, y_observed, label='samples')
 
     def observe(self, return_params=True):
         predictions = self.get_sample_grid()
-        params = predictions[-1]['params']
-        params_as_data = predictions[-1]['X']
+        pred_sorted = sorted(
+            predictions, key=itemgetter('sample'),
+            reverse=False)  #or true? DO I minimise or maximise? RSME = Minimise
+        params = pred_sorted[-1]['params']
+
+        params_as_data = pred_sorted[-1]['X']
         X_train, y_train = self.ds.train_dataset
         X_test, y_test = self.ds.test_dataset
         new_model = self.test_model(**params)
@@ -475,7 +491,7 @@ class ThompsonGridSearch(object):
             return np.array(real_score), params_as_data
         return real_score
 
-    def train_params(self, num_epochs=100):
+    def train_params(self, num_epochs=10):
         real_score, params = self.observe()
         #real_score = 
         #print(np.array([params.T]))
@@ -484,11 +500,11 @@ class ThompsonGridSearch(object):
         #print(np.array(real_score).shape)
         X = np.array([np.array(params.T)])[0]
         y = np.expand_dims(np.array(real_score), 0)  #np.array(real_score)
-        print('huh')
-        print(X.shape)
-        print(y.shape)
-        print(X)
-        print(y)
+        #print('huh')
+        #print(X.shape)
+        #print(y.shape)
+        ##print(X)
+        #print(y)
 
         for i in range(num_epochs):
             #print(np.array([params.T]))
