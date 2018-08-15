@@ -154,6 +154,98 @@ class DropoutNetwork(base.EnsembleNetwork):
         return pred_mean, pred_std
 
 
+class DropoutNetwork_new(base.EnsembleNetwork):
+    def __init__(
+            self,
+            num_neurons=[10, 10, 10],
+            num_features=1,
+            learning_rate=0.001,
+            activations=None,  #[tf.nn.tanh,tf.nn.relu,tf.sigmoid]
+            dropout_layers=None,  #[True,False,True]
+            initialisation_scheme=None,  #[tf.random_normal,tf.random_normal,tf.random_normal]
+            optimizer=None,  #defaults to GradiendDescentOptimizer,
+            num_epochs=None,  #defaults to 1,
+            seed=None,
+            adversarial=None,
+            l2=None,
+            l=None,
+            num_preds=None,
+            keep_prob=None):
+
+        self.num_preds = num_preds or 50
+        self.keep_prob = keep_prob or 0.85
+
+        super(DropoutNetwork, self).__init__(
+            num_neurons=num_neurons, num_features=num_features,
+            learning_rate=learning_rate, activations=activations,
+            dropout_layers=dropout_layers,
+            initialisation_scheme=initialisation_scheme, optimizer=optimizer,
+            num_epochs=num_epochs, seed=seed, adversarial=adversarial, l2=l2,
+            l=l)
+
+    @lazy_property
+    def predict_graph(self):
+        #set layer_input to input
+        layer_input = self.X
+
+        #for each layer do
+        for i, w in enumerate(self.w_list):
+
+            #z = input x Weights
+            a = tf.matmul(layer_input, w, name='matmul_' + str(i))
+
+            if i == self.num_layers:  #This is new - Dropout!
+                a = tf.nn.dropout(a, self.keep_prob)  #0.9 = keep_prob
+
+            #z + bias
+            if i < self.num_layers:
+                bias = self.b_list[i]
+                a = tf.add(a, bias)
+
+            #a = sigma(z) if not last layer and regression
+            if i < self.num_layers:
+
+                a = self.activations[i](a)
+            #set layer input to a for next cycle
+
+            layer_input = a
+
+        return a
+
+    def predict(self, X):
+        X = self.check_input_dimensions(X)
+
+        pred_list = [
+            self.session.run(self.predict_graph,
+                             feed_dict={self.X: X}).squeeze()
+            for i in range(self.num_preds)
+        ]
+
+        pred_mean = np.mean(pred_list, axis=0)
+        #pred_std = np.std(pred_list,axis=0)
+        return pred_mean  #, pred_std
+
+    def get_mean_and_std(self, X):
+        #compute tau http://mlg.eng.cam.ac.uk/yarin/blog_3d801aa532c1ce.html
+        num_datapoints = len(X)
+        length_scale = 1
+        tau = (length_scale**2 * self.keep_prob) / (2 * num_datapoints *
+                                                    self.l)
+
+        X = self.check_input_dimensions(X)
+
+        pred_list = [
+            self.session.run(self.predict_graph,
+                             feed_dict={self.X: X}).squeeze()
+            for i in range(15)
+        ]
+
+        pred_mean = np.mean(pred_list, axis=0)
+        pred_std = np.var(pred_list, axis=0) + tau  #**-1
+        #pred_std[pred_std == 0] = 0.01
+        return pred_mean, pred_std
+
+
 class NlpdNetwork(base.EnsembleNetwork):
     #TODO: Move parameter initialisation into base so that changes there affect this Network, too
     def __init__(

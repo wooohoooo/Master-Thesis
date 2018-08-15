@@ -12,6 +12,7 @@ import json
 import pprint
 import hashlib
 pp = pprint.PrettyPrinter(indent=4)
+from sklearn.preprocessing import StandardScaler
 
 
 def safe_ln(x):
@@ -354,6 +355,8 @@ class ThompsonGridSearch(object):
     def __init__(self, param_grid, dataset_creator, thompson_model, test_model,
                  model_params):
         self.grid = ParameterGrid(param_grid)  #parameter grid
+        self.scaler = StandardScaler()
+
         self.val_grid = self.create_dataset_from_grid()
         self.observed = []
         self.model_params = model_params
@@ -369,14 +372,20 @@ class ThompsonGridSearch(object):
         return np.array(list(params.items()))
 
     def create_dataset_from_grid(self):
+        learning_rate_true = False
         df = pd.DataFrame(list(self.grid))
+        if learning_rate_true == True:
+            lrs = self.scaler.fit_transform(
+                df['learning_rate'].values.reshape(-1, 1)).flatten()
+            print(lrs)
+            df['learning_rates'] = lrs
+        #df['learning_rate'] = df['learning_rate'].astype('str')
 
         df['activations'] = df['activations'].astype(str)
         df['initialisation_scheme'] = df['initialisation_scheme'].astype(str)
         df['num_neurons'] = df['num_neurons'].astype(str)
         df['seed'] = df['seed'].astype(str)
         df['l2'] = df['l2'].astype(str)
-        df['learning_rate'] = df['learning_rate'].astype('str')
         df_dummies = pd.DataFrame(pd.get_dummies(df))
         vals = df_dummies.values
         self.input_size = vals.shape[1]
@@ -461,14 +470,16 @@ class ThompsonGridSearch(object):
                          np.array(y) + np.array(y_var), alpha=.3, color='b')
         plt.fill_between(X, y,
                          np.array(y) - np.array(y_var), alpha=.3, color='b')
-        #plt.scatter(X_observed, y_observed, color='red', label='observations')
+        plt.scatter(X_observed, y_observed, color='red', label='observations')
 
         plt.legend()
 
         plt.figure()
-        plt.scatter(X_observed, y_observed, label='samples')
+        plt.scatter(X_observed, y_observed, label='observations')
+        print(self.observed)
 
     def observe(self, return_params=True):
+        lr_scale = False
         predictions = self.get_sample_grid()
         pred_sorted = sorted(
             predictions, key=itemgetter('sample'),
@@ -478,6 +489,12 @@ class ThompsonGridSearch(object):
         params_as_data = pred_sorted[-1]['X']
         X_train, y_train = self.ds.train_dataset
         X_test, y_test = self.ds.test_dataset
+        #print(params)
+        #print(params_as_data)
+
+        if lr_scale == True:
+            params['learning_rate'] = self.scaler.inverse_transform(
+                df['learning_rate'].values.reshape(-1, 1)).flatten()
         new_model = self.test_model(**params)
         new_model.fit(X_train, y_train)
         real_score = new_model.score(X_test, y_test)
@@ -491,7 +508,7 @@ class ThompsonGridSearch(object):
             return np.array(real_score), params_as_data
         return real_score
 
-    def train_params(self, num_epochs=10):
+    def train_params(self, num_epochs=1, online_bootstrap=True):
         real_score, params = self.observe()
         #real_score = 
         #print(np.array([params.T]))
@@ -503,17 +520,38 @@ class ThompsonGridSearch(object):
         #print('huh')
         #print(X.shape)
         #print(y.shape)
+        #print(X)
+        #print(y)
         ##print(X)
         #print(y)
+        if online_bootstrap:
+            old_X = np.squeeze(
+                np.array([x['X'] for x in self.observed]), axis=2)
+            old_y = np.array([y['score'] for y in self.observed])
+            #print('oldX{}'.format(old_X))
+            #print(old_y)
+            #print(old_X.shape)
+            #print(X.shape)
+            #print(old_y.shape)
+            #print(y.shape)
+            X = np.append(X.T, np.array(old_X).T, axis=1)
+            y = np.append(y, np.array(old_y))
+
+            #print(X.shape)
+
+            #print(y.shape)
+
+            #print(X)
+            #print(y)
 
         for i in range(num_epochs):
             #print(np.array([params.T]))
             #print(np.array(real_score))
-            self.thompson_model.fit(X, y, shuffle=False)
+            self.thompson_model.fit(X.T, y.T, shuffle=False)
 
-    def goforit(self, num_times):
+    def goforit(self, num_times, num_epochs=1):
         for i in range(num_times):
-            self.train_params()
+            self.train_params(num_epochs)
 
     def sample_from_prediction(self, mean, var):
         return np.random.normal(loc=mean, scale=var, size=None)
