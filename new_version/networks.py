@@ -80,7 +80,7 @@ class DropoutNetwork(base.EnsembleNetwork):
             num_preds=None,
             keep_prob=None):
 
-        self.num_preds = num_preds or 50
+        self.num_preds = num_preds or 15
         self.keep_prob = keep_prob or 0.85
 
         super(DropoutNetwork, self).__init__(
@@ -145,13 +145,20 @@ class DropoutNetwork(base.EnsembleNetwork):
         pred_list = [
             self.session.run(self.predict_graph,
                              feed_dict={self.X: X}).squeeze()
-            for i in range(15)
+            for i in range(self.num_preds)
         ]
 
         pred_mean = np.mean(pred_list, axis=0)
         pred_std = np.var(pred_list, axis=0) + tau  #**-1
         #pred_std[pred_std == 0] = 0.01
         return pred_mean, pred_std
+
+    def obtain_sample(self, X):
+        X = self.check_input_dimensions(X)
+        X = np.array(X).T
+
+        return self.session.run(self.predict_graph,
+                                feed_dict={self.X: X}).squeeze()
 
 
 class DropoutNetwork_new(base.EnsembleNetwork):
@@ -241,7 +248,7 @@ class DropoutNetwork_new(base.EnsembleNetwork):
         ]
 
         pred_mean = np.mean(pred_list, axis=0)
-        pred_std = np.var(pred_list, axis=0) + tau  #**-1
+        pred_std = np.var(pred_list, axis=0) + tau**-1
         #pred_std[pred_std == 0] = 0.01
         return pred_mean, pred_std
 

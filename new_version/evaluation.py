@@ -410,7 +410,11 @@ class ThompsonGridSearch(object):
             #print(X)
             mean, var = self.thompson_model.get_mean_and_std(np.transpose(X))
             var = np.sqrt(var)
-            sample = self.sample_from_prediction(mean, var)
+            if hasattr(self.thompson_model, 'obtain_sample'):  #Dropoutnetwork
+                sample = self.thompson_model.obtain_sample(X)
+                #print('Dtopout!')
+            else:
+                sample = self.sample_from_prediction(mean, var)
             predictions.append({
                 'mean': mean,
                 'var': var,
@@ -477,6 +481,8 @@ class ThompsonGridSearch(object):
 
         plt.figure()
         plt.scatter(X_observed, y_observed, label='observations')
+        plt.scatter(X, y, label='samples')
+        plt.legend()
 
         #print(self.observed)
 
