@@ -353,9 +353,11 @@ class ThompsonGridSearch(object):
     and performs thompson parameter search"""
 
     def __init__(self, param_grid, dataset_creator, thompson_model, test_model,
-                 model_params):
+                 model_params, decay_factor=None, trials=None):
         self.grid = ParameterGrid(param_grid)  #parameter grid
         self.scaler = StandardScaler()
+        self.decay_factor = decay_factor or 1.5
+        self.trials = trials or 1
 
         self.val_grid = self.create_dataset_from_grid()
         self.observed = []
@@ -492,9 +494,9 @@ class ThompsonGridSearch(object):
         pred_sorted = sorted(
             predictions, key=itemgetter('sample'),
             reverse=False)  #or true? DO I minimise or maximise? RSME = Minimise
-        params = pred_sorted[-1]['params']
+        params = pred_sorted[0]['params']
 
-        params_as_data = pred_sorted[-1]['X']
+        params_as_data = pred_sorted[0]['X']
         X_train, y_train = self.ds.train_dataset
         X_test, y_test = self.ds.test_dataset
         #print(params)
@@ -503,13 +505,16 @@ class ThompsonGridSearch(object):
         if lr_scale == True:
             params['learning_rate'] = self.scaler.inverse_transform(
                 df['learning_rate'].values.reshape(-1, 1)).flatten()
-        new_model = self.test_model(**params)
-        new_model.fit(X_train, y_train)
-        real_score = new_model.score(X_test, y_test)
+        for i in range(self.trials):
+            new_model = self.test_model(**params)
+            new_model.fit(X_train, y_train)
+            real_score = new_model.score(X_test, y_test)
+            #nlpd = new_model.compute_nlpd(X_test, y_test)
         self.observed.append({
             'params': params,
             'score': real_score,
-            'X': params_as_data
+            'X': params_as_data,
+            #'nlpd': nlpd
         })
         if return_params:
             #return np.expand_dims(np.array(real_score), 1), params_as_data
@@ -544,7 +549,8 @@ class ThompsonGridSearch(object):
                 np.array([x['X'] for x in self.observed]), axis=2)
             old_y = np.array([y['score'] for y in self.observed])
             num_points = len(old_y) + 1
-            ps = [1 / (i + 1) for i in range(num_points)][::-1]
+            ps = [(1 / (i + 1))**self.decay_factor
+                  for i in range(num_points)][::-1]
             mask = np.array(np.random.binomial(num_points, ps), dtype=bool)
             #print(mask)
             #print(y)
