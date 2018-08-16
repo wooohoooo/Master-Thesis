@@ -488,13 +488,18 @@ class ThompsonGridSearch(object):
 
         #print(self.observed)
 
-    def observe(self, return_params=True):
+    def observe(self, return_params=True, skip_observed=True):
         lr_scale = False
         predictions = self.get_sample_grid()
         pred_sorted = sorted(
             predictions, key=itemgetter('sample'),
             reverse=False)  #or true? DO I minimise or maximise? RSME = Minimise
-        params = pred_sorted[0]['params']
+        if skip_observed:
+            observed_params = [x['params'] for x in pred_sorted]
+            for i in range(len(pred_sorted)):  #skip already observed values
+                params = pred_sorted[i]['params']
+                if params not in observed_params:
+                    break
 
         params_as_data = pred_sorted[0]['X']
         X_train, y_train = self.ds.train_dataset
