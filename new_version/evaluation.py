@@ -386,6 +386,7 @@ class ThompsonGridSearch(object):
         df['num_neurons'] = df['num_neurons'].astype(str)
         df['seed'] = df['seed'].astype(str)
         df['l2'] = df['l2'].astype(str)
+        df['optimizer'] = df['optimizer'].astype(str)
         df_dummies = pd.DataFrame(pd.get_dummies(df))
         vals = df_dummies.values
         self.input_size = vals.shape[1]
@@ -476,6 +477,7 @@ class ThompsonGridSearch(object):
 
         plt.figure()
         plt.scatter(X_observed, y_observed, label='observations')
+
         #print(self.observed)
 
     def observe(self, return_params=True):
@@ -508,7 +510,7 @@ class ThompsonGridSearch(object):
             return np.array(real_score), params_as_data
         return real_score
 
-    def train_params(self, num_epochs=1, online_bootstrap=True):
+    def train_params(self, num_epochs=5, online_bootstrap=True):
         real_score, params = self.observe()
         #real_score = 
         #print(np.array([params.T]))
@@ -550,25 +552,27 @@ class ThompsonGridSearch(object):
             X = np.append(X_new.T, np.array(old_X).T, axis=1)
             y = np.append(y_new, np.array(old_y))
             #print(zip(X, y))
-            #X = X.T[mask].T
-            #y = y.T[:][mask].T
+            X = X.T[mask].T
+            y = y.T[:][mask].T
             #print(zip(X, y))
-            print(X.T[0])
-            print(X_new)
-            print(y[0])
-            print(y_new)
+            #print(X.T[0])
+            #print(X_new)
+            #print(y[0])
+            #print(y_new)
+            print('length of the new dataset: {}'.format(X.shape))
             print('new X is in there: {}'.format(X.T in X_new))
             print('new y is in there: {}'.format(y in y_new))
             assert (X.T in X_new) == (y in y_new)
             print('mean probability is {}'.format(np.mean(mask)))
             #print(y[mask])
             #print(mask.shape)
-            print(y.shape)
-            print(X.shape)
+            #print(y.shape)
+            #print(X.shape)
         for i in range(num_epochs):
 
             #print(np.array([params.T]))
             #print(np.array(real_score))
+
             self.thompson_model.fit(X.T, y.T, shuffle=False)
 
     def goforit(self, num_times, num_epochs=1):
@@ -578,6 +582,10 @@ class ThompsonGridSearch(object):
     def sample_from_prediction(self, mean, var):
         return np.random.normal(loc=mean, scale=var, size=None)
 
+    def get_best_observation(self):
+        pred_sorted = sorted(self.observed, key=itemgetter('score'),
+                             reverse=False)
+        return pred_sorted[0], pred_sorted[-1]
         #def train_params_old(self, params):
         """trains a model on the params. Predicts X/y. Uses the outcome to train thompson_model."""
 
