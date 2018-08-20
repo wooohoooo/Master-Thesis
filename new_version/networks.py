@@ -187,8 +187,8 @@ class DropoutNetwork_new(base.EnsembleNetwork):
             learning_rate=learning_rate, activations=activations,
             dropout_layers=dropout_layers,
             initialisation_scheme=initialisation_scheme, optimizer=optimizer,
-            num_epochs=num_epochs, seed=seed, adversarial=adversarial, l2=l2,
-            l=l)
+            num_epochs=num_epochs * 2, seed=seed, adversarial=adversarial,
+            l2=l2, l=l)
 
     @lazy_property
     def predict_graph(self):
@@ -284,7 +284,7 @@ class NlpdNetwork(base.EnsembleNetwork):
         self.activations = activations or [tf.nn.relu
                                            ] * self.num_layers  #tanh,relu, 
         self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
-        self.num_epochs = num_epochs or 10
+        self.num_epochs = num_epochs * 2 or 20
         self.seed = seed or None
 
         #initialise graph
@@ -452,7 +452,7 @@ class LrNetwork(NlpdNetwork):
         self.activations = activations or [tf.nn.relu
                                            ] * self.num_layers  #tanh,relu, 
         self.initialisation_scheme = initialisation_scheme or tf.contrib.layers.xavier_initializer  #tf.keras.initializers.he_normal  #
-        self.num_epochs = num_epochs or 10
+        self.num_epochs = num_epochs * 2 or 20
         self.seed = seed or None
         self.learning_rate_init = learning_rate or 0.001
         self.adversarial = adversarial or False

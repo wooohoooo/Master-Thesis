@@ -382,6 +382,10 @@ class ThompsonGridSearch(object):
             #print(lrs)
             df['learning_rates'] = lrs
         #df['learning_rate'] = df['learning_rate'].astype('str')
+        try:
+            df['learning_rate'] = df['learning_rate'].astype(str)
+        except:
+            pass
 
         df['activations'] = df['activations'].astype(str)
         df['initialisation_scheme'] = df['initialisation_scheme'].astype(str)
@@ -482,13 +486,13 @@ class ThompsonGridSearch(object):
         plt.legend()
 
         plt.figure()
-        plt.scatter(X_observed, y_observed, label='observations')
-        plt.scatter(X, y, label='samples')
+        plt.scatter(X_observed, y_observed, label='observations', color='r')
+        plt.scatter(X, y, label='samples', alpha=0.4, color='b')
         plt.legend()
 
         #print(self.observed)
 
-    def observe(self, return_params=True, skip_observed=True):
+    def observe(self, return_params=True, skip_observed=False):
         lr_scale = False
         predictions = self.get_sample_grid()
         pred_sorted = sorted(
@@ -500,6 +504,8 @@ class ThompsonGridSearch(object):
                 params = pred_sorted[i]['params']
                 if params not in observed_params:
                     break
+        else:
+            params = pred_sorted[0]['params']
 
         params_as_data = pred_sorted[0]['X']
         X_train, y_train = self.ds.train_dataset
